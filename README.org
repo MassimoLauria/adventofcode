@@ -1,0 +1,7 @@
+Massimo's attempts to save xmas!
+
+Here  I  collect my  various  crappy  attempts  to  do the  Advent  of
+Code challenges. For more info go to https://adventofcode.com/
+
+All code here  belongs to Massimo Lauria, who  takes no responsibility
+for other people abuse/misuse of it.
