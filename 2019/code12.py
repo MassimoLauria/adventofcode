@@ -55,39 +55,25 @@ def updatedb(state,i,db):
         return None
 
 def part2(P):
-    V = np.zeros_like(P)
-    #printstatus(P,V)
-    i=0
-    initstatex=tuple(P[:,0])+tuple(V[:,0])
-    initstatey=tuple(P[:,1])+tuple(V[:,1])
-    initstatez=tuple(P[:,2])+tuple(V[:,2])
-    statedbx={initstatex:0}
-    statedby={initstatey:0}
-    statedbz={initstatez:0}
-    rx,ry,rz=None,None,None
-    while True:
-        gravity(P,V)
-        velocity(P,V)
-        i+=1
-        currstatex=tuple(P[:,0])+tuple(V[:,0])
-        currstatey=tuple(P[:,1])+tuple(V[:,1])
-        currstatez=tuple(P[:,2])+tuple(V[:,2])
-        if rx is None:
-            rx=updatedb(currstatex,i,statedbx)
-        if ry is None:
-            ry=updatedb(currstatey,i,statedby)
-        if rz is None:
-            rz=updatedb(currstatez,i,statedbz)
-        if rx is not None and ry is not None and rz is not None:
-            break
-    print(rx,ry,rz)
-    print(np.lcm.reduce([rx,ry,rz]))
+    rep=[None,None,None]
+    for a in range(3):
+        X=P[:,a].copy()
+        V=np.zeros_like(X)
+        db = {tuple(X)+tuple(V) : 0}
+        i=0
+        while rep[a] is None:
+            gravity(X,V)
+            velocity(X,V)
+            i+=1
+            rep[a] = updatedb(tuple(X)+tuple(V),i,db)
+        assert rep[a][0]==0
+    print(np.lcm.reduce([rep[i][1] for i in [0,1,2]]))
     
 if __name__ == "__main__":
-    part1(example1,steps=1000)   
+    #part1(example1,steps=1000)   
     #part1(example2)
-    #part1(exercise,steps=1000)
-    part2(example1)
-    part2(example2)
+    part1(exercise,steps=1000)
+    #part2(example1)
+    #part2(example2)
     part2(exercise)
     
