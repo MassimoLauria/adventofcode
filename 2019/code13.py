@@ -33,7 +33,7 @@ def part2(gfx=False, autoplay=True):
 
     Tiles = defaultdict(lambda: 0)
     code = readdata()
-    CPU = IntCodeCPU('2'+code[1:])
+    CPU = IntCodeCPU('2' + code[1:])
     score = 0
     paddlex = -1
     ballx = -1
