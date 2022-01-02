@@ -140,7 +140,7 @@ def part2(data=None):
         bottom = top
         top = top * 2 + 1
         res = solvefor(value, deps, reqs, top)
-    while bottom < top-1:
+    while bottom < top - 1:
         mid = (top + bottom) // 2
         res = solvefor(value, deps, reqs, mid)
         if res < totalore:
