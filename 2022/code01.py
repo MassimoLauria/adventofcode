@@ -33,13 +33,13 @@ def get_numbers(data=None):
             cal[-1].append(int(l))
     return cal
 
-def aoc1part1(data=None):
+def part1(data=None):
     s=[]
     for x in get_numbers(data):
         s.append(sum(x))
-    return max(s)
+    print(max(s))
 
-def aoc1part2(data=None):
+def part2(data=None):
     v = 0
     s = [-1,-1,-1]
     for l in parsedata(data)+['']:
@@ -58,10 +58,10 @@ def aoc1part2(data=None):
             s.append(v)
         s.pop()
         v = 0
-    return sum(s)
+    print(sum(s))
 
 if __name__ == "__main__":
-    print(aoc1part1(text))
-    print(aoc1part1())
-    print(aoc1part2(text))
-    print(aoc1part2())
+    part1(text)
+    part1()
+    part2(text)
+    part2()
