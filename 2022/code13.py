@@ -2,6 +2,7 @@
 """
 
 from functools import cmp_to_key
+import ast
 
 EXAMPLE = """
 [1,1,3,1,1]
@@ -40,8 +41,8 @@ def readdata(data=None):
     while i < len(data):
         if len(data[i])==0:
             i+=1
-        left  = eval(data[i])
-        right = eval(data[i+1])
+        left  = ast.literal_eval(data[i])
+        right = ast.literal_eval(data[i+1])
         Pairs.append((left,right))
         i+=2
     return Pairs
