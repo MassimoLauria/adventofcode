@@ -19,7 +19,13 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3
 """
 
 import random
+import re
+import math
 from collections import defaultdict
+
+
+def dist(p,q):
+    return abs(p[0]-q[0])+abs(p[1]-q[1])
 
 def total(intervals,el):
     ttotal = 0
@@ -70,42 +76,57 @@ def covered_interval(S,y):
 
 
 def part1(y,data=None):
-    """solve part 1"""
+    """(x,y)ve part 1"""
     S,B = readdata(data)
     b_on_y = [bx for bx,by in B if by==y]
     b_on_y.sort()
     Intervals = covered_interval(S,y)
     print("part1:", total(Intervals,b_on_y))
 
-def part2(topy,data=None):
-    """solve part 2"""
-    S,B = readdata(data)
-    rx=-1
-    ry=-1
-    for y in range(topy+1):
-        Intervals = covered_interval(S,y)
-        if len(Intervals)>1:
-            ry = y
-            rx = Intervals[0][1]+1
-            break
-    print("part2:",4000000*rx+ry)
+def part2(gridsize,data=None):
+    """(x,y)ve part 2"""
+    sensors,_ = readdata(data)
+    signal = {s: dist(s,sensors[s]) for s in sensors }
+    energy = {}
+    # make a grid of point aligned with sensors
+    xt = sorted(list(set([0,gridsize] + [x for x,y in signal])))
+    yt = sorted(list(set([0,gridsize] + [y for x,y in signal])))
+    # energy of signal at each grid point
+    for x in xt:
+        for y in yt:
+            energy[x,y]=max([signal[s] - dist(s,(x,y))
+                             for s in signal])
+            if energy[x,y]<0:
+                print("part2:",4000000*x+y)
+                return
+    # find uncovered rectangle
+    for i in range(len(xt)-1):
+        for j in range(len(yt)-1):
 
-def part2alt(gridsize,data=None):
-    """solve part 2"""
-    S,B = readdata(data)
-    Disks= {}
-    rx = 0
-    ry = 0
-    for x,y in S:
-        bx,by = S[x,y]
-        Disks[x,y] = abs(bx-x)+abs(by-y)
-    XFree = [[0,gridsize]]*(gridsize+1)
-    YFree = [[0,gridsize]]*(gridsize+1)
-    print("part2:",4000000*rx+ry)
+            lx,hx,ly,hy = xt[i], xt[i+1], yt[j], yt[j+1]
+            max_distance = hx-lx + hy-ly  # max distance in rectangle
+
+            # test if rectangle is not covered
+            if energy[lx,ly]+energy[hx,hy]+1 < max_distance and \
+               energy[lx,hy]+energy[hx,ly]+1 < max_distance:
+                x1, x2 , y1, y2 =(xt[i],xt[i+1],yt[j],yt[j+1])
+                break
+
+    # only one strip is uncovered diagonally
+    e1 = energy[x1,y1]
+    e2 = energy[x2,y1]
+    x = (x1 + x2 + e1 - e2) // 2
+    y = x1 + y1 + e1 + 1 - x
+    assert dist((x,y),(x1,y1)) == energy[x1,y1]+1
+    assert dist((x,y),(x1,y2)) == energy[x1,y2]+1
+    assert dist((x,y),(x2,y1)) == energy[x2,y1]+1
+    assert dist((x,y),(x2,y2)) == energy[x2,y2]+1
+    print("part2:",4000000*x+y)
+
+
 
 if __name__ == "__main__":
     part1(10,EXAMPLE)
     part1(2000000)
     part2(20,EXAMPLE)
-    part2alt(20,EXAMPLE)
-    part2alt(4000000,EXAMPLE)
+    part2(4000000)
