@@ -14,9 +14,11 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
 
+import networkx
 import re
 import math
 import random
+from time import time as clock
 from collections import defaultdict, deque
 
 def readdata(data=None):
@@ -58,17 +60,13 @@ def part1(data=None):
     """solve part 1"""
 
     graph, pressures = readdata(data)
-    useful_nodes = set([w for w in graph if pressures[w]>0])
-    useful_nodes.add('AA')
-
+    useful_nodes = set(['AA']+[w for w in graph if pressures[w]>0])
     D = process_graph(graph,
                       useful_nodes)
-
     # never return to 'AA'
-    if pressures['AA']==0:
-        for v in D:
-            if 'AA' in D[v]:
-                D[v].pop('AA')
+    assert pressures['AA']==0
+    for v in D:
+        D[v].pop('AA',1)
 
     best_value=0
     curr_value=0
@@ -124,21 +122,20 @@ def part2(data=None):
     """solve part 2"""
 
     graph, pressures = readdata(data)
-    useful_nodes = set([w for w in graph if pressures[w]>0])
-    useful_nodes.add('AA')
+    useful_nodes = set(['AA']+[w for w in graph if pressures[w]>0])
+    D = process_graph(graph,useful_nodes)
 
-    D = process_graph(graph,
-                      useful_nodes)
     # never return to 'AA'
-    if pressures['AA']==0:
-        for v in D:
-            if 'AA' in D[v]:
-                D[v].pop('AA')
-    best_value=0
+    assert pressures['AA']==0
+    for v in D:
+        D[v].pop('AA',1)
+
     curr_value=0
-    available = sum(pressures.values())
+    best_value=0
     collected = set(['AA'])
-    p0,p1=[],[]
+    count=0
+    path=[['AA'],['AA']]
+    st = clock()
 
     def availablef(pos,time,collected):
         nonlocal D,pressures
@@ -150,59 +147,52 @@ def part2(data=None):
                           (time[1]-D[pos[1]][v])*pressures[v] )
         return avail
 
-    def branch(pos,time):
+    def branch(i,pos,time):
 
         nonlocal D
         nonlocal best_value
         nonlocal curr_value,collected
-        nonlocal available
-        nonlocal p0,p1
+        nonlocal count
+        nonlocal path
 
-
-        #print(pos,time,curr_value)
-        #print(p0,p1)
+        count+=1
 
         if curr_value>best_value:
             best_value = max(curr_value,best_value)
+            print(best_value,"after",count,"[{}]".format(clock()-st))
+            print(path)
 
 
         # cut paths with no advantage
         if curr_value+availablef(pos,time,collected) <= best_value:
             return
 
-        # choose next to open
-        # g = []
-        # for i in [0,1]:
-        #     for npos in D[pos[i]]:
-        #         if npos in collected or D[pos[i]][npos]>=time[i]:
-        #             continue
-        #         g.append((i,npos))
-        for npos in D:
-
-            if npos in collected or npos=="AA":
+        L = []
+        for p in D[pos[i]]:
+            if p in collected:
                 continue
+            value = pressures[p]*(time[i]-D[pos[i]][p])
+            if value>0:
+                L.append( (value,D[pos[i]][p],p) )
 
-            d = D[pos[0]][npos]
-            if time[0]>d:
-                curr_value += pressures[npos]*(time[0]-d)
-                collected.add(npos)
-                p0.append(npos)
-                branch((npos,pos[1]), (time[0]-d,time[1]) )
-                collected.remove(npos)
-                p0.pop()
-                curr_value -= pressures[npos]*(time[0]-d)
+        L.sort(reverse=True)
+        for value,d,npos in L:
 
-            d = D[pos[1]][npos]
-            if time[1]>d:
-                curr_value += pressures[npos]*(time[1]-d)
-                p1.append(npos)
-                collected.add(npos)
-                branch((pos[0],npos), (time[0],time[1]-d) )
-                collected.remove(npos)
-                p1.pop()
-                curr_value -= pressures[npos]*(time[1]-d)
+            curr_value += value
+            collected.add(npos)
+            tpos,ttime=pos[:],time[:]
+            ttime[i] -= d
+            tpos[i]   = npos
+            path[i].append(npos)
+            branch(i,tpos,ttime)
+            collected.remove(npos)
+            path[i].pop()
+            curr_value -= value
 
-    branch(['AA','AA'], [26,26])
+        if i==0:
+            branch(1,pos,time)
+
+    branch(0,['AA','AA'], [26,26])
     print("part2:", best_value)
 
 
