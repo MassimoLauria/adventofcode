@@ -137,14 +137,16 @@ def part2(data=None):
     path=[['AA'],['AA']]
     st = clock()
 
-    def availablef(pos,time,collected):
+    def availablef(i,pos,time,collected):
         nonlocal D,pressures
         avail = 0
         for v in D:
             if v in collected:
                 continue
-            avail += max( (time[0]-D[pos[0]][v])*pressures[v],
-                          (time[1]-D[pos[1]][v])*pressures[v] )
+            if i==0:
+                avail += max(time-D[pos][v],26-D['AA'][v])*pressures[v]
+            else:
+                avail += (time-D[pos][v])*pressures[v]
         return avail
 
     def branch(i,pos,time):
@@ -159,40 +161,35 @@ def part2(data=None):
 
         if curr_value>best_value:
             best_value = max(curr_value,best_value)
-            print(best_value,"after",count,"[{}]".format(clock()-st))
-            print(path)
+            print("Best {:4d} after {} steps. [Clock: {}]".
+                format(best_value,count,clock()-st))
 
 
         # cut paths with no advantage
-        if curr_value+availablef(pos,time,collected) <= best_value:
+        if curr_value+availablef(i,pos,time,collected) <= best_value:
             return
 
         L = []
-        for p in D[pos[i]]:
+        for p in D[pos]:
             if p in collected:
                 continue
-            value = pressures[p]*(time[i]-D[pos[i]][p])
+            value = pressures[p]*(time-D[pos][p])
             if value>0:
-                L.append( (value,D[pos[i]][p],p) )
+                L.append( (value,D[pos][p],p) )
 
         L.sort(reverse=True)
         for value,d,npos in L:
 
             curr_value += value
             collected.add(npos)
-            tpos,ttime=pos[:],time[:]
-            ttime[i] -= d
-            tpos[i]   = npos
-            path[i].append(npos)
-            branch(i,tpos,ttime)
+            branch(i,npos,time-d)
             collected.remove(npos)
-            path[i].pop()
             curr_value -= value
 
         if i==0:
-            branch(1,pos,time)
+            branch(1,'AA',26)
 
-    branch(0,['AA','AA'], [26,26])
+    branch(0,'AA',26)
     print("part2:", best_value)
 
 
