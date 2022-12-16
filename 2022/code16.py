@@ -136,6 +136,7 @@ def part2(data=None):
     count=0
     path=[['AA'],['AA']]
     st = clock()
+    symbrk = None
 
     def availablef(i,pos,time,collected):
         nonlocal D,pressures
@@ -160,12 +161,11 @@ def part2(data=None):
         count+=1
 
         if curr_value>best_value:
-            best_value = max(curr_value,best_value)
-            print("Best {:4d} after {} steps. [Clock: {}]".
-                format(best_value,count,clock()-st))
+            best_value = curr_value
+            #print("Best {:4d} after {:10d} steps. [Clock: {}]".
+            #    format(best_value,count,clock()-st))
 
-
-        # cut paths with no advantage
+        # cut paths with no possible gain
         if curr_value+availablef(i,pos,time,collected) <= best_value:
             return
 
