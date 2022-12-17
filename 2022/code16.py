@@ -136,7 +136,6 @@ def part2(data=None):
     count=0
     path=[['AA'],['AA']]
     st = clock()
-    symbrk = None
 
     def availablef(i,pos,time,collected):
         nonlocal D,pressures
@@ -167,14 +166,12 @@ def part2(data=None):
 
         # cut paths with no possible gain
         if curr_value+availablef(i,pos,time,collected) <= best_value:
-            return
+           return
 
         L = []
         for p in D[pos]:
-            if p in collected:
-                continue
             value = pressures[p]*(time-D[pos][p])
-            if value>0:
+            if p not in collected and value>0:
                 L.append( (value,D[pos][p],p) )
 
         L.sort(reverse=True)
@@ -187,14 +184,52 @@ def part2(data=None):
             curr_value -= value
 
         if i==0:
-            branch(1,'AA',26)
+           branch(1,'AA',26)
 
     branch(0,'AA',26)
     print("part2:", best_value)
 
 
+
+
+
+def part2alt(data=None):
+    """solve part 2"""
+
+    graph, pressures = readdata(data)
+    useful_nodes = set(['AA']+[w for w in graph if pressures[w]>0])
+    D = process_graph(graph,useful_nodes)
+
+    # never return to 'AA'
+    assert pressures['AA']==0
+    for v in D:
+        D[v].pop('AA',1)
+
+    curr_value=0
+    B = {x:1<<i for i,x in enumerate(v for v in pressures if pressures[v]>0) }
+    halfjob={}
+
+    def branch(pos,time,value,collected):
+
+        nonlocal D
+        halfjob[collected]= max(halfjob.get(collected,0),value)
+
+        for npos in D[pos]:
+            d = D[pos][npos]
+            gain = pressures[npos]*(time-d)
+            if B[npos] & collected or gain<=0:
+                continue
+            branch(npos,time-d, value+gain, collected | B[npos])
+
+    branch('AA',26,0,0)
+    print("part2alt:",
+          max(v0+v1 for p0,v0 in halfjob.items()
+                    for p1,v1 in halfjob.items()
+                    if p0 & p1 ==0
+                    ))
+
 if __name__ == "__main__":
     part1(EXAMPLE)
     part1()
     part2(EXAMPLE)
-    part2()
+    part2alt()
