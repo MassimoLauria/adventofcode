@@ -2,6 +2,7 @@
 """
 
 from itertools import product
+from collections import deque
 
 EXAMPLE = """
 2,2,2
@@ -49,27 +50,31 @@ def part1(data=None):
     for x,y,z in D:
         for t in diamond(x,y,z):
             surface += 1 if t not in D else 0
-    print(surface)
+    print("part1:", surface)
 
 
 def part2(data=None):
     """solve part 2"""
-    D = set(readdata(data))
-    border=set()
-    start=D.pop()
-    D.add(start)
-    for x,y,z in D:
-        if x<start[0]:
-            start = x,y,z
-        for b in cube(x,y,z):
-            if b not in D:
-                border.add(b)
-    start=start[0]-1,start[1],start[2]
-    assert start in border
-
-
+    lava = set(readdata(data))
+    # build the border
+    border = set( b for t in lava for b in cube(*t))
+    border.difference_update(lava)
+    start =  min(border, key=lambda t: t[0])
+    # BFS from start
+    external=set([start])
+    Q = deque([start])
+    while len(Q)>0:
+        p = Q.popleft()
+        for q in diamond(*p):
+            if q in border and q not in external:
+                external.add(q)
+                Q.append(q)
+    # external surface
+    surface = [ 1 for b in lava for t in diamond(*b)  if t in external]
+    print("part2:",len(surface))
 
 if __name__ == "__main__":
     part1(EXAMPLE)
     part1()
     part2(EXAMPLE)
+    part2()

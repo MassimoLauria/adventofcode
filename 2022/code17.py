@@ -4,23 +4,23 @@
 EXAMPLE = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
 
 pieces=[ # reverse
-    [int('00111100',2)],  #  @@@@
+    [int('0011110',2)],  #  @@@@
 
-    [int('00010000',2),   #   @
-     int('00111000',2),   #  @@@
-     int('00010000',2)],  #   @
+    [int('0001000',2),   #   @
+     int('0011100',2),   #  @@@
+     int('0001000',2)],  #   @
 
-    [int('00111000',2),   #  @@@
-     int('00001000',2),   #    @
-     int('00001000',2)],  #    @
+    [int('0011100',2),   #  @@@
+     int('0000100',2),   #    @
+     int('0000100',2)],  #    @
 
-    [int('00100000',2),   #  @
-     int('00100000',2),   #  @
-     int('00100000',2),   #  @
-     int('00100000',2)],  #  @
+    [int('0010000',2),   #  @
+     int('0010000',2),   #  @
+     int('0010000',2),   #  @
+     int('0010000',2)],  #  @
 
-    [int('00110000',2),   #  @@
-     int('00110000',2)]   #  @@
+    [int('0011000',2),   #  @@
+     int('0011000',2)]   #  @@
 ]
 
 def readdata(data=None):
@@ -28,45 +28,79 @@ def readdata(data=None):
     if data is None:
        with open("input17.txt") as f:
             data = f.read()
-    return data
+    return [c for c in data if c in "<>"]
+
+def tryright(piece):
+    if any([b & 0x1 for b in piece]): return piece
+    return [b>>1 for b in piece]
+
+def tryleft(piece):
+    if any([b & 0x40 for b in piece]): return piece
+    return [b<<1 for b in piece]
 
 
+def collision(G,piece,pos):
+    rows = min(len(piece),len(G)-pos)
+    return any(G[pos+i] & piece[i] for i in range(rows))
 
-def printchamber(chamber):
-    i = len(chamber)-1
-    output=[]
+def place(G,piece,pos):
+    G.extend([0]*(pos+len(piece)-len(G)))
+    for i in range(len(piece)):
+        G[pos+i] |= piece[i]
+
+
+def printchamber(chamber,piece=None,pos=-1):
+    output = chamber[:]
+    if piece is not None and pos>=0:
+        place(output,piece,pos)
+    i = len(output)-1
     tr ={ ord('0') : ord(' '),
           ord('1') : ord('#') }
     while i>=0:
-        print("{:08b}".format(chamber[i]).translate(tr))
+        x="{:07b}".format(output[i]).translate(tr)
+        print('{}{}{}'.format(i%10,x,i%10),end="")
+        if output[i] == 127 and i!=0: print("<<<<<<<<",end="")
+        print("  ",chr(output[i])," ")
         i-=1
 
-
-def part1(data=None):
+def part1(duration,data=None):
     """solve part 1"""
     jets = readdata(data)
-    print(jets)
-    chamber = bytearray([255]+[1]*5)
-    pid = 0
-    jid = 0
-    pos = 0 # piece position (from bottom)
-    height=1
-    for _ in range(6):
-        # make room in the chamber
-        ph = len(pieces[pid])
-        pos  = height + 3
-        ceil = height + 3 + ph
-        if ceil>len(chamber):
-            chamber.extend([1]*(ceil-len(chamber)))
-        # piece enters
-        for i in range(len(pieces[pid])):
-            chamber[pos+i] |= pieces[pid][i]
-            height = max(height,pos+ph)
-        #
-        pid = (pid + 1) % len(pieces)
-    printchamber(chamber)
+    #print(len(jets))
+    #print(len(pieces))
+    pit = bytearray([127])
+    pos = 0    # piece position (from bottom)
+    highest=0  # position of highest block
+    j = 0
+
+    for i in range(duration):
+        piece = pieces[i % len(pieces)][:]
+        pos   = highest + 4
+        while True:
+
+            jet = jets[j]
+            j = (j + 1) % len(jets)
+
+            if jet=='<':
+                tmp = tryleft(piece)
+            else:
+                assert jet=='>'
+                tmp = tryright(piece)
+
+            if not collision(pit,tmp,pos):
+                piece = tmp
+
+            if not collision(pit,piece,pos-1):
+                pos -= 1
+            else:
+                break
+        place(pit,piece,pos)
+        highest = max(highest,pos+len(piece)-1)
+
+    # printchamber(chamber)
+    print("part1:",highest)
 
 if __name__ == "__main__":
-    part1(EXAMPLE)
-    # part1()
+    part1(2022,EXAMPLE)
+    part1(2022)
     # part2()
