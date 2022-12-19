@@ -23,84 +23,21 @@ def readdata(data=None):
         BP.append(nums)
     return BP
 
-def solve(BP,bid,time):
-    # state is (ore,clay,obs,geode,
-    #           ore-r,clay-r,obs-r,geode-r)
-    start = (0,0,0,0,1,0,0,0)
-    Time  = { start : time }
-    Q = deque()
-    Q.append(start)
-    geodes = 0
-    while len(Q):
-        v = Q.popleft()
-        #print(v)
-        if Time[v] == 0:
-            geodes = max(geodes,v[3])
-            continue
-        new_resources = v[-4:]
-        w = list(v)
-        w[0] += w[4]  # new ore
-        w[1] += w[5]  # new clay
-        w[2] += w[6]  # new obsidian
-        w[3] += w[7]  # new geode
-        if tuple(w) not in Time:
-            Q.append(tuple(w))
-            Time[Q[-1]] = Time[v] - 1
-        if BP[bid][1]<=v[0]:  # build ore robot with ore
-            w[0] -= BP[bid][1]
-            w[4] +=1
-            if tuple(w) not in Time:
-                Q.append(tuple(w))
-                Time[Q[-1]] = Time[v] - 1
-            w[0] += BP[bid][1]
-            w[4] -=1
-        if BP[bid][2]<=v[0]:  # build clay robot with ore
-            w[0] -= BP[bid][2]
-            w[5] +=1
-            if tuple(w) not in Time:
-                Q.append(tuple(w))
-                Time[Q[-1]] = Time[v] - 1
-            w[0] += BP[bid][2]
-            w[5] -=1
-        if BP[bid][3]<=v[0] and BP[bid][4]<=v[1]:  # build obsidian robot with ore/clay
-            w[0] -= BP[bid][3]
-            w[1] -= BP[bid][4]
-            w[6] +=1
-            if tuple(w) not in Time:
-                Q.append(tuple(w))
-                Time[Q[-1]] = Time[v] - 1
-            w[0] += BP[bid][3]
-            w[1] += BP[bid][4]
-            w[6] -=1
-        if BP[bid][5]<=v[0] and BP[bid][6]<=v[2]:  # build geode robot with ore/obsidia
-            w[0] -= BP[bid][5]
-            w[2] -= BP[bid][6]
-            w[7] +=1
-            if tuple(w) not in Time:
-                Q.append(tuple(w))
-                Time[Q[-1]] = Time[v] - 1
-            w[0] += BP[bid][5]
-            w[2] += BP[bid][6]
-            w[7] -=1
-    return geodes
+rehit = 0
 
 def solve_rec(bp,time,ore,clay,obs,geo,rore,rclay,robs,rgeo,Best):
+    global rehit
     best = geo
     if time==0: return best
 
-    if (time,ore,clay,obs,geo,rore,rclay,robs,rgeo) in Best:
-        return Best[(time,ore,clay,obs,geo,rore,rclay,robs,rgeo)]
+    if (ore,clay,obs,geo,rore,rclay,robs,rgeo) in Best:
+        rehit += 1
+        return Best[(ore,clay,obs,geo,rore,rclay,robs,rgeo)]
 
-    if ore >= bp[1]:
+    if ore >=bp[5] and obs >= bp[6]:
         value = solve_rec(bp,time-1,
-                          ore+rore-bp[1],clay+rclay,obs+robs,geo+rgeo,
-                          rore+1,rclay,robs,rgeo,Best)
-        best = max(best,value)
-
-    if ore >=bp[2]:
-        value = solve_rec(bp,time-1,
-                          ore+rore-bp[2],clay+rclay,obs+robs,geo+rgeo,
-                          rore,rclay+1,robs,rgeo,Best)
+                          ore+rore-bp[5],clay+rclay,obs+robs-bp[6],geo+rgeo,
+                          rore,rclay,robs,rgeo+1,Best)
         best = max(best,value)
 
     if ore >=bp[3] and clay >= bp[4]:
@@ -109,10 +46,19 @@ def solve_rec(bp,time,ore,clay,obs,geo,rore,rclay,robs,rgeo,Best):
                           rore,rclay,robs+1,rgeo,Best)
         best = max(best,value)
 
-    if ore >=bp[5] and obs >= bp[6]:
+
+    if ore >=bp[2]:
         value = solve_rec(bp,time-1,
-                          ore+rore-bp[5],clay+rclay,obs+robs-bp[6],geo+rgeo,
-                          rore,rclay,robs,rgeo+1,Best)
+                          ore+rore-bp[2],clay+rclay,obs+robs,geo+rgeo,
+                          rore,rclay+1,robs,rgeo,Best)
+        best = max(best,value)
+
+
+    if ore >= bp[1]:
+        value = solve_rec(bp,time-1,
+                          ore+rore-bp[1],clay+rclay,obs+robs,geo+rgeo,
+                          rore+1,rclay,robs,rgeo,Best)
+
         best = max(best,value)
 
     value = solve_rec(bp,time-1,
@@ -120,22 +66,27 @@ def solve_rec(bp,time,ore,clay,obs,geo,rore,rclay,robs,rgeo,Best):
                       rore,rclay,robs,rgeo,Best)
     best = max(best,value)
 
-    Best[(time,ore,clay,obs,geo,rore,rclay,robs,rgeo)] = best
+    Best[(ore,clay,obs,geo,rore,rclay,robs,rgeo)] = best
     return best
 
 def part1(data=None):
     """solve part 1"""
+    global rehit
     BP =  readdata(data)
     res  = 0
     time = 24
     for i in range(len(BP)):
-        x = solve_rec(BP[i],time,0,0,0,0,1,0,0,0,{})
+        D={}
+        rehit = 0
+        x = solve_rec(BP[i],time,0,0,0,0,1,0,0,0,D)
         print("BP {} opens {} geodes".format(i+1,x))
+        print("size",len(D))
+        print("rehit",rehit)
         res += (i+1)*x
     print("part1:",res)
 
 
 if __name__ == "__main__":
     part1(EXAMPLE)
-    # part1()
+    #part1()
     # part2()
