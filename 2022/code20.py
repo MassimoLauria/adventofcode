@@ -10,35 +10,37 @@ def readdata(data=None):
             data = f.read()
     return [int(x) for x in data.split() if len(x)!=0]
 
-def movebeforeof(link,src,tgt):
+def movebeforeof(linked_list,src,tgt):
+    left,right = linked_list
     # extract src
-    p,n = link[src]
+    p,n = left[src],right[src]
     if tgt == n: return  # nothing to move
-    link[p] = (link[p][0],n)
-    link[n] = (p,link[n][1])
+    right[p] = n
+    left [n] = p
     # insert between p(tgt) and tgt
-    ptgt = link[tgt][0]
-    link[ptgt] = link[ptgt][0],src
-    link[tgt]  = src,link[tgt][1]
-    link[src]  = ptgt,tgt
+    ptgt = left[tgt]
+    right[ptgt] = src
+    left [src]  = ptgt
+    left [tgt]  = src
+    right[src]  = tgt
 
-def moverelative(link,i,offset):
+def moverelative(linked_list,i,offset):
+    _,right = linked_list
     if offset == 0: return
     assert offset>0
-    dir = 0 if offset<0 else 1
-    t   = i
-    offset = -offset if offset<0 else offset+1
+    target = right[i]
     for _ in range(offset):
-        t = link[t][dir]
-    movebeforeof(link,i,t)
+        target = right[target]
+    movebeforeof(linked_list,i,target)
 
-def print_llist(V,link,start=0):
+def print_llist(V,linked_list,start=0):
+    left,right = linked_list
     print(V[start], end="")
-    p = link[start][1]
+    p = right[start]
     N = len(V)
     while p!=start:
         print("",V[p], end="")
-        p = link[p][1]
+        p = right[p]
     print()
 
 
@@ -50,23 +52,25 @@ def mixer(multiplier,rounds,data=None):
     V  = [ (v*multiplier) for v in V]
     sV = [ v % (N-1) for v in V]
     zero = V.index(0)
-    link = []            # link at distance -+1
+    left,right = [],[] # links at distance -+1
+                       # a list of left links and right links
 
     for i in range(N):
-        link.append( ((i-1) % N, (i+1) %N) )
+        left.append ((i-1) %N)
+        right.append((i+1) %N)
+    linked_list = (left,right)
     #print_llist(V,link)
     for _ in range(rounds):
         for i in range(N):
-            moverelative(link,i, sV[i])
-        #print_llist(V,link)
+            moverelative(linked_list,i, sV[i])
     res = 0
     i = zero
     assert V[i]==0
-    for _ in range(1000 % N): i = link[i][1]
+    for _ in range(1000 % N): i = right[i]
     res += V[i]
-    for _ in range(1000 % N): i = link[i][1]
+    for _ in range(1000 % N): i = right[i]
     res += V[i]
-    for _ in range(1000 % N): i = link[i][1]
+    for _ in range(1000 % N): i = right[i]
     res += V[i]
     print(res)
 
