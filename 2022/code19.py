@@ -6,8 +6,10 @@ Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsid
 
 Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.
 """
-
+import multiprocessing
+import time
 import re
+
 from collections import deque
 def readdata(data=None):
     """Read and parse the input data"""
@@ -23,70 +25,92 @@ def readdata(data=None):
         BP.append(nums)
     return BP
 
-rehit = 0
-
-def solve_rec(bp,time,ore,clay,obs,geo,rore,rclay,robs,rgeo,Best):
-    global rehit
+def solve_rec(bp,time,ore,clay,obs,geo,rore,rclay,robs,rgeo,
+              Best,sofar):
     best = geo
     if time==0: return best
 
-    if (ore,clay,obs,geo,rore,rclay,robs,rgeo) in Best:
-        rehit += 1
-        return Best[(ore,clay,obs,geo,rore,rclay,robs,rgeo)]
+    if geo+rgeo*time+time*(time-1)//2 < sofar:
+        return 0
+
+    if (time,ore,clay,obs,geo,rore,rclay,robs,rgeo) in Best:
+        return Best[(time,ore,clay,obs,geo,rore,rclay,robs,rgeo)]
 
     if ore >=bp[5] and obs >= bp[6]:
         value = solve_rec(bp,time-1,
                           ore+rore-bp[5],clay+rclay,obs+robs-bp[6],geo+rgeo,
-                          rore,rclay,robs,rgeo+1,Best)
+                          rore,rclay,robs,rgeo+1,Best,sofar)
         best = max(best,value)
+        sofar= max(best,sofar)
 
     if ore >=bp[3] and clay >= bp[4]:
         value = solve_rec(bp,time-1,
                           ore+rore-bp[3],clay+rclay-bp[4],obs+robs,geo+rgeo,
-                          rore,rclay,robs+1,rgeo,Best)
+                          rore,rclay,robs+1,rgeo,Best,sofar)
         best = max(best,value)
-
+        sofar= max(best,sofar)
 
     if ore >=bp[2]:
         value = solve_rec(bp,time-1,
                           ore+rore-bp[2],clay+rclay,obs+robs,geo+rgeo,
-                          rore,rclay+1,robs,rgeo,Best)
+                          rore,rclay+1,robs,rgeo,Best,sofar)
         best = max(best,value)
+        sofar= max(best,sofar)
 
 
     if ore >= bp[1]:
         value = solve_rec(bp,time-1,
                           ore+rore-bp[1],clay+rclay,obs+robs,geo+rgeo,
-                          rore+1,rclay,robs,rgeo,Best)
+                          rore+1,rclay,robs,rgeo,Best,sofar)
 
+        sofar= max(best,sofar)
         best = max(best,value)
 
     value = solve_rec(bp,time-1,
                       ore+rore,clay+rclay,obs+robs,geo+rgeo,
-                      rore,rclay,robs,rgeo,Best)
+                      rore,rclay,robs,rgeo,Best,sofar)
     best = max(best,value)
+    sofar= max(best,sofar)
 
-    Best[(ore,clay,obs,geo,rore,rclay,robs,rgeo)] = best
+    Best[(time,ore,clay,obs,geo,rore,rclay,robs,rgeo)] = best
     return best
 
+
+def solve(data):
+    bp,time = data
+    D = {}
+    return solve_rec(bp,time,0,0,0,0,1,0,0,0,D,0)
+
 def part1(data=None):
-    """solve part 1"""
-    global rehit
+    """solve part 1 (orrible solution using 12 processors)"""
+    Time = 24
     BP =  readdata(data)
-    res  = 0
-    time = 24
+    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=len(BP))
+    outputs=pool.map(solve,[(bp,Time) for bp in BP])
+    res = 0
     for i in range(len(BP)):
-        D={}
-        rehit = 0
-        x = solve_rec(BP[i],time,0,0,0,0,1,0,0,0,D)
-        print("BP {} opens {} geodes".format(i+1,x))
-        print("size",len(D))
-        print("rehit",rehit)
-        res += (i+1)*x
+        print("BP {} opens {} geodes".format(i+1,outputs[i]))
+        res += (i+1)*outputs[i]
     print("part1:",res)
 
+def part2(data=None):
+    """solve part 2"""
+    Time = 32
+    BP   =  readdata(data)
+    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=len(BP))
+    if data!=EXAMPLE:
+        BP=BP[:3]
+    outputs=pool.map(solve,[(bp,Time) for bp in BP])
+    res = 1
+    for i in range(len(BP)):
+        print("BP {} opens {} geodes".format(i+1,outputs[i]))
+        res *= outputs[i]
+    print("part2:",res)
 
 if __name__ == "__main__":
-    part1(EXAMPLE)
-    #part1()
-    # part2()
+    part1(EXAMPLE) # 33
+    part1()      # 1177
+    part2(EXAMPLE) # 3472
+    part2()        # 62744
