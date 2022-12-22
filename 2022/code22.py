@@ -21,67 +21,159 @@ EXAMPLE = """
 faces = ['>','v','<','^']
 delta = [ (1,0), (0,1) , (-1,0) , (0,-1) ]
 
+NOREV = False
+REV   = True
 
-def tblr_example(x,y):
-    t,b,l,r=0,0,0,0
-    if y < 4:  l,r, = 8,11
-    elif y<8:  l,r = 0,11
-    else:      l,r = 8,15
-    if x < 8:     t,b, = 4,7
-    elif x < 12:  t,b = 0,11
-    else:         t,b = 8,11
-    return t,b,l,r
+example_map  = { (2,0): 'B', (0,1): 'V' , (1,1): 'W',
+                 (2,1): 'R',  (2,2): 'G', (3,2): 'Y' }
 
-def tblr_input(x,y):
-    t,b,l,r=0,0,0,0
-    if y < 50:     l,r, = 50,149
-    elif y < 100:  l,r = 50,99
-    elif y < 150:  l,r = 0,99
-    else:          l,r = 0,49
-    if x < 50:     t,b, = 100,199
-    elif x < 100:  t,b = 0,149
-    else:          t,b = 0,49
-    return t,b,l,r
+example_cube_layout = {
+    # from face, direction, face, direction, reverse needed?
+    ('V','t') : ('B','t'  ,REV),
+    ('V','b') : ('G','b' ,REV),
+    ('V','r') : ('W','l' ,NOREV),
+    ('V','l') : ('Y','b',REV),
 
-def next_pos_p1e(px,py,dx,dy):
-    assert abs(dx)+abs(dy)==1
-    bsize = 4
-    tblr  = tblr_example
-    nx,ny = px+dx, py+dy
-    if not ((px % bsize) in [0,bsize-1] or (py % bsize) in [0,bsize-1]):
-        return nx,ny
-    #print(nx,ny)
-    t,b,l,r = tblr(px,py)
-    #print(t,b,l,r)
-    if ny<t:
-        ny=b
-    if ny>b:
-        ny=t
-    if nx<l:
-        nx=r
-    if nx>r:
-        nx=l
-    return nx,ny
+    ('R','t') : ('B','b'   ,NOREV),
+    ('R','b') : ('G','t'  ,NOREV),
+    ('R','l') : ('W','r'  ,NOREV),
+    ('R','r') : ('Y','t' ,REV),
 
-def next_pos_p1(px,py,dx,dy):
-    assert abs(dx)+abs(dy)==1
-    bsize = 50
-    tblr  = tblr_input
-    nx,ny = px+dx, py+dy
-    if not ((px % bsize) in [0,bsize-1] or (py % bsize) in [0,bsize-1]):
-        return nx,ny
-    #print(nx,ny)
-    t,b,l,r = tblr(px,py)
-    #print(t,b,l,r)
-    if ny<t:
-        ny=b
-    if ny>b:
-        ny=t
-    if nx<l:
-        nx=r
-    if nx>r:
-        nx=l
-    return nx,ny
+    ('W','t') : ('B','l'   ,NOREV),
+    ('W','b') : ('G','l'  ,REV),
+
+    ('Y','l') : ('G','r'  ,NOREV),
+    ('Y','r') : ('B', 'r' , REV),
+}
+
+example_planar_layout = {
+    # from face, direction, face, direction, reverse needed?
+
+    ('B','l') : ('B','r' ,NOREV),
+
+    ('V','r') : ('W','l' ,NOREV),
+    ('W','r') : ('R','l' ,NOREV),
+    ('R','r') : ('V','l' ,NOREV),
+
+    ('G','r') : ('Y','l' ,NOREV),
+    ('Y','r') : ('G','l' ,NOREV),
+
+    ('V','t') : ('V','b' ,NOREV),
+
+    ('W','t') : ('W','b' ,NOREV),
+
+    ('B','b') : ('R','t' ,NOREV),
+    ('R','b') : ('G','t' ,NOREV),
+    ('G','b') : ('B','t' ,NOREV),
+
+    ('Y','t') : ('Y','b' ,NOREV),
+}
+
+input_map = {
+    (0,2) : 'R',
+    (0,3) : 'G',
+    (1,0) : 'W',
+    (1,1) : 'B',
+    (1,2) : 'Y',
+    (2,0) : 'V'
+}
+
+input_cube_layout = {
+    # from face, direction, face, direction, reverse needed?
+    ('B','t') : ('W','b' ,NOREV),
+    ('B','b') : ('Y','t' ,NOREV),
+    ('B','l') : ('R','t' ,NOREV),
+    ('B','r') : ('V','b' ,NOREV),
+
+    ('G','t') : ('R','b' ,NOREV),
+    ('G','b') : ('V','t' ,NOREV),
+    ('G','l') : ('W','t' ,NOREV),
+    ('G','r') : ('Y','b' ,NOREV),
+
+    ('R','r') : ('Y','l' ,NOREV),
+    ('R','l') : ('W','l' ,REV),
+
+    ('V','l') : ('W','r' ,NOREV),
+    ('V','r') : ('Y','r' , REV),
+}
+
+input_planar_layout = {
+    # from face, direction, face, direction, reverse needed?
+    ('R','b') : ('G','t' ,NOREV),
+    ('G','b') : ('R','t' ,NOREV),
+
+    ('W','b') : ('B','t' ,NOREV),
+    ('B','b') : ('Y','t' ,NOREV),
+    ('Y','b') : ('W','t' ,NOREV),
+
+    ('V','t') : ('V','b' ,NOREV),
+
+    ('W','r') : ('V','l' ,NOREV),
+    ('V','r') : ('W','l' ,NOREV),
+
+    ('B','r') : ('B','l' ,NOREV),
+
+    ('R','r') : ('Y','l' ,NOREV),
+    ('Y','r') : ('R','l' ,NOREV),
+
+    ('G','r') : ('G','l' ,NOREV)
+}
+
+def process_layout(layout):
+    D = {}
+    for f,s in layout:
+        nf,ns,rev = layout[f,s]
+        if (nf,ns) not in layout:
+            D[nf,ns] = (f,s,rev)
+    layout.update(D)
+
+def process_map(faces_map):
+    D = { name: coords for coords,name in faces_map.items() }
+    faces_map.update(D)
+
+def next_pos(px,py,face,cmap,layout,size):
+
+    if py % size == 0 and faces[face]=='^':
+        d = 't'
+    elif py % size == (size-1) and faces[face]=='v':
+        d = 'b'
+    elif px % size == 0 and faces[face]=='<':
+        d = 'l'
+    elif px % size == (size-1) and faces[face]=='>':
+        d = 'r'
+    else:
+        dx,dy = delta[face]
+        return px+dx,py+dy,face
+
+    facename = cmap[(px//size),py//size]
+    nfacename,nd,rev = layout[facename,d]
+    nx,ny = cmap[nfacename]
+    nx*=size
+    ny*=size  # top left position of the face, in the bidinentional map
+    if d=='t' or d=='b':
+        param = px % size
+    elif d=='l' or d=='r':
+        param = py % size
+    if rev:
+        param = size - 1 - param
+    if nd in 't':
+        nx += param
+        nface = 1
+    elif nd == 'b':
+        nx += param
+        ny += size-1
+        nface = 3
+    elif nd == 'l':
+        ny += param
+        nface = 0
+    elif nd == 'r':
+        ny += param
+        nx += size-1
+        nface = 2
+    else:
+        assert False
+    return nx,ny,nface
+
 
 def readdata(data=None):
     """Read and parse the input data"""
@@ -108,74 +200,57 @@ def readdata(data=None):
     if s<i: I.append(int(path[s:i]))
     return L,I
 
-def print_board(B):
-    side=max(len(l) for l in B)
-    for i,l in enumerate(B):
-        s = len(l)
-        try:
-            s = min(l.index('.'),s)
-        except ValueError:
-            pass
-        try:
-            s = min(l.index('#'),s)
-        except ValueError:
-            pass
-        print("{:3}".format(i),"".join(l)," "*(side-len(l)),"  ",s,len(l))
-
-def copy_board(B):
-    B2=[]
-    for l in B:
-        B2.append(l[:])
-    return B2
-
-def part1(data=None):
-    """solve part 1"""
-    B,path = readdata(data)
-    next_pos = next_pos_p1e if len(B)==12 else next_pos_p1
-    px,py,face = play_board(path,B,next_pos)
-    print("part1:", 1000*(py+1)+(px+1)*4+face)
-
-def part2(data=None):
-    """solve part 2"""
-    B,path = readdata(data)
-    next_pos = next_pos_p1e if len(B)==12 else next_pos_p1
-    px,py,face = play_board(path,B,next_pos)
-    print("part2:", 1000*(py+1)+(px+1)*4+face)
-
-def play_board(path,board,next_pos):
-    """solve part 2"""
-    tboard= copy_board(board)
+def play(path,board,next_pos):
     # start position
     px = board[0].index('.')
     py = 0
     face = 0
-    curr_delta = delta[face]
-    #print_board(tboard)
     for step in path:
         if step == 'L':
             face = (face-1) % len(faces)
-            curr_delta = delta[face]
             continue
         elif step == 'R':
             face = (face+1) % len(faces)
-            curr_delta = delta[face]
             continue
-        # Move forward step
         for i in range(step):
-            tboard[py][px] = faces[face]
-            nx,ny = next_pos(px,py,curr_delta[0],curr_delta[1])
+            nx,ny,nface = next_pos(px,py,face)
             if board[ny][nx]=="#":
                 break
             else:
                 assert board[ny][nx]=="."
-                px,py = nx,ny
-                tboard[py][px] = faces[face]
-        # print_board(B2)
-    return px,py,face
+                px,py,face = nx,ny,nface
+    return 1000*(py+1)+(px+1)*4+face
 
 
 if __name__ == "__main__":
-    part1(EXAMPLE)
-    part1()
-    part2(EXAMPLE)
-    part2()
+    process_map(example_map)
+    process_map(input_map)
+    process_layout(example_planar_layout)
+    process_layout(example_cube_layout)
+    process_layout(input_planar_layout)
+    process_layout(input_cube_layout)
+
+    next_pos_p1e = lambda x,y,f : next_pos(x,y,f,
+                                           example_map,
+                                           example_planar_layout,4)
+    next_pos_p1i = lambda x,y,f : next_pos(x,y,f,
+                                           input_map,
+                                           input_planar_layout,50)
+    next_pos_p2e = lambda x,y,f : next_pos(x,y,f,
+                                           example_map,
+                                           example_cube_layout,4)
+    next_pos_p2i = lambda x,y,f : next_pos(x,y,f,
+                                           input_map,
+                                           input_cube_layout,50)
+
+    board, path = readdata(EXAMPLE)
+    print("part1:",play(path, board,next_pos_p1e))
+
+    board, path = readdata()
+    print("part1:",play(path, board,next_pos_p1i))
+
+    board, path = readdata(EXAMPLE)
+    print("part2:",play(path, board,next_pos_p2e))
+
+    board, path = readdata()
+    print("part2:",play(path, board,next_pos_p2i))
