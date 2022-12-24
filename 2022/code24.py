@@ -15,65 +15,20 @@ EXAMPLE = """
 WINDS = { '>' :(0,+1), '<' :(0,-1), '^' :(-1,0), 'v' :(+1,0) }
 DIAM  = [ (1,0),(-1,0),(0,1),(0,-1)]
 
-class grid:
-    def __init__(self,H,W):
-        assert H>0 and W>0
-        self._M = [ [ list() for _ in range(W)] for _ in range(H) ]
-        self._H = H
-        self._W = W
 
-    def size(self):
-        return self._H,self._W
+def safe(grid,i,j,t):
+    H,W = len(grid),len(grid[0])
 
-    def print(self):
-        W = self._W
-        print("#."+'#'*W)
-        for l in self._M:
-            print('#',end='')
-            for v in l:
-                if len(v)==0:
-                    print('.',end='')
-                elif len(v)==1:
-                    print(v[0],end='')
-                else:
-                    print(len(v),end='')
-            print('#')
-        print('#'*W+".#")
+    if i==-1 and j==0: return True
+    if i==H and j==W-1: return True
 
-    def forward(self,steps=1):
-        H,W = self.size()
-        new = grid(H,W)
-        for i in range(H):
-            for j in range(W):
-                for w in self._M[i][j]:
-                    di,dj = WINDS[w]
-                    new._M[(i+steps*di) % H][(j+steps*dj) % W].append(w)
-        return new
-
-    def copy(self):
-        H,W = self.size()
-        new = grid(H,W)
-        for i in range(H):
-            for j in range(W):
-                new[i,j].extend(self._M[i][j])
-        return new
-
-    def safe(self,i,j):
-
-        if i==-1 and j==0: return True
-        if i==self._H and j==self._W-1: return True
-
-        if i<0 or i>=self._H: return False
-        if j<0 or j>=self._W: return False
-        return len(self._M[i][j])==0
-
-    def __getitem__(self,pair):
-        i,j = pair
-        return self._M[i][j]
-
-    def __setitem__(self,pair,value):
-        i,j = pair
-        self._M[i][j] = value
+    if i<0 or i>=H: return False
+    if j<0 or j>=W: return False
+    if grid[(i-t) % H ][j] == "v": return False
+    if grid[(i+t) % H ][j] == "^": return False
+    if grid[i][(j-t) % W ] == ">": return False
+    if grid[i][(j+t) % W ] == "<": return False
+    return True
 
 
 def readdata(data=None):
@@ -86,43 +41,30 @@ def readdata(data=None):
     if len(data[0])==0: data.pop(0)
     H=len(data)-2
     W=len(data[0])-2
-    G = grid(H,W)
+    G = [ [ "." for _ in range(W) ] for _ in range(H) ]
     for i in range(H):
         for j in range(W):
-            v = data[i+1][j+1]
-            if v == ".": continue
-            assert v in WINDS
-            G[i,j].append(v)
+            G[i][j] = data[i+1][j+1]
     return G
 
-def reaching(start,end,G):
-    Q = deque([(start[0],start[1],0)])
-    V = set()
-    t_grid = 0
-    reached = [(start[0],start[1],0)]
+def reaching(start,end,G,tstart=0):
+    if start==end:
+        return tstart
+    Q = deque([(start[0],start[1],tstart)])
+    V = set([(start[0],start[1],tstart)])
     while len(Q)>0:
         i,j,t = Q.popleft()
-        if (i,j)==end:
-            break
-        assert t == t_grid or t==t_grid-1
-        if t_grid == t:
-            G = G.forward()
-            t_grid += 1
-            #print("Another grid",t_grid)
-            #G.print()
-        if G.safe(i,j):
-            Q.append((i,j,t_grid))
-        for di,dj in DIAM:
-            if G.safe(i+di,j+dj) and (i+di,j+dj,t_grid) not in V:
-                V.add((i+di,j+dj,t_grid))
-                Q.append((i+di,j+dj,t_grid))
-    return t
-
+        for di,dj in [ (0,0),(1,0),(-1,0),(0,1),(0,-1)]:
+            p = (i+di,j+dj,t+1)
+            if safe(G,*p) and p not in V:
+                if p[:2]==end: return p[2]
+                V.add(p)
+                Q.append(p)
 
 def part1(data=None):
     """solve part 1"""
     G = readdata(data)
-    H,W = G.size()
+    H,W = len(G),len(G[0])
     start = (-1,0)
     end   = (H,W-1)
     t = reaching(start,end,G)
@@ -130,16 +72,14 @@ def part1(data=None):
 
 def part2(data=None):
     """solve part 2"""
-    G0 = readdata(data)
-    H,W = G0.size()
+    G = readdata(data)
+    H,W = len(G),len(G[0])
     start = (-1,0)
     end   = (H,W-1)
-    path1 = reaching(start,end,G0)
-    G1    = G0.forward(path1)
-    path2 = reaching(end,start,G1)
-    G2    = G1.forward(path2)
-    path3 = reaching(start,end,G2)
-    print("part2:",path1+path2+path3)
+    t1 = reaching(start,end,G)
+    t2 = reaching(end,start,G,t1)
+    t3 = reaching(start,end,G,t2)
+    print("part2:",t3)
 
 if __name__ == "__main__":
     part1(EXAMPLE)
