@@ -72,18 +72,19 @@ def part2(v,phases=100,repeat=1):
     #print(len(signal))
     #print(signal[0:3],"...",signal[-3:])
     # vlen = len(v)*repeat
-    v = list(v)*repeat
-    vlen = len(v)
-    S = {}
-    for i in range(len(v)):
-        for s range(i,len(v),2*(i+1)):
-            S[i,s] =
-
-    for p in range(phases):
-        #print("phase",p)
-        v = [ next(v,vlen,i) for i in range(vlen)]
-        #print(v)
+    src = list(v)*repeat
+    dst = [0]*len(src)
     return "".join(str(v[i]) for i in range(8))
+
+
+def nextvec(src,dst):
+    assert len(src)==len(dst)
+    b = 0 - 1j
+    for j in range(len(dst)):
+        dst[j] = 0
+        for i in range(len(src)):
+            dst[j] += src[i] * (b**(3+(i+1)//(j+1)))
+        dst[j] = int(abs(dst[j].real))%10
 
 
 if __name__ == "__main__":
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     print("Example 2:",part1(EXAMPLES[1])) #  73745418
     print("Example 3:",part1(EXAMPLES[2])) #  52432133
     print("part1    :",part1(readdata()))  #  34841690
-    print("Example 1:",part2(EXAMPLES[0],repeat=1)) #
-    print("Example 2:",part2(EXAMPLES[1])) #
-    print("Example 3:",part2(EXAMPLES[2])) #
+    #print("Example 1:",part2(EXAMPLES[0],repeat=1)) #
+    #print("Example 2:",part2(EXAMPLES[1])) #
+    #print("Example 3:",part2(EXAMPLES[2])) #
     #print("part2    :",part2(readdata()))  #
