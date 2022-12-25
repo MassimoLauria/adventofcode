@@ -74,6 +74,11 @@ def part2(v,phases=100,repeat=1):
     # vlen = len(v)*repeat
     v = list(v)*repeat
     vlen = len(v)
+    S = {}
+    for i in range(len(v)):
+        for s range(i,len(v),2*(i+1)):
+            S[i,s] =
+
     for p in range(phases):
         #print("phase",p)
         v = [ next(v,vlen,i) for i in range(vlen)]
