@@ -5,7 +5,10 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
-#include <regex>
+
+#include <unordered_set>
+#include <unordered_map>
+
 
 using namespace std;
 
@@ -75,3 +78,28 @@ vector<string> splittokens(const string& sentence) {
   }
   return std::move(tokens);
 }
+
+// Dictionaries and set of tuples
+//
+// Using hash function in
+// https://stackoverflow.com/questions/20511347/a-good-hash-function-for-a-vector/
+//
+template <typename T, size_t N> struct std::hash<std::array<T, N>> {
+    inline size_t operator()(const std::array<T, N> &v) const {
+        std::hash<T> d_hasher;
+        std::size_t seed = N;
+        for(auto& i : v) {
+            seed ^= d_hasher(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+
+// A set of tuples of length N of type T
+template <typename T, size_t N>
+using aoc_set = unordered_set<std::array<T,N>>;
+
+// A dictonary that maps tuples of length N of type I and produces output of
+// type O
+template <typename I, size_t N, typename O>
+using aoc_dict = unordered_map<std::array<I,N>,O>;

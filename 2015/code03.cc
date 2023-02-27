@@ -7,9 +7,6 @@
 
 #include <vector>
 #include <string>
-#include <unordered_set>
-#include <utility>
-//#include <unordered_map>
 
 /* utils.h provides
    - load_file_content: loads a text file into a string
@@ -17,6 +14,11 @@
                        and ignores other non digit characters
    - splitlines: split text into lines, produces a vector<string>
    - splitlines: split text into tokens, produces a vector<string>
+
+   - aoc_set<T,N>   : A set of tuples of length N of type T
+
+   - aoc_dict<I,N,O>: A dictonary that maps tuples of length N of type I and
+                      produces output of type O
 */
 #include "utils.h"
 
@@ -29,17 +31,12 @@ string EXAMPLE {R"~(
 
 string INPUTFILE="input03.txt";
 
-template <> struct std::hash<std::pair<int, int>> {
-    inline size_t operator()(const std::pair<int, int> &v) const {
-        std::hash<int> int_hasher;
-        return int_hasher(v.first) ^ int_hasher(v.second);
-    }
-};
+
 
 void part1(const string& text) {
     int x=0;
     int y=0;
-    unordered_set< pair<int,int> > C;
+    aoc_set<int,2> C;
     C.insert({x,y});
     for(int i=0;i<text.length();i++) {
         if (text[i]=='>') x += 1;
@@ -54,7 +51,7 @@ void part1(const string& text) {
 void part2(const string& text) {
     int x[2]={0,0};
     int y[2]={0,0};
-    unordered_set< pair<int,int> > C;
+    aoc_set<int,2> C;
     C.insert({x[0],y[0]});
     for(int i=0;i<text.length();i++) {
         if (text[i]=='>') x[i%2] += 1;
