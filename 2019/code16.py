@@ -63,9 +63,11 @@ def part2(text,phases=100):
     """
     skip = int(text[:7])
     assert skip < len(text)*10000 <= 2*skip+1
-    digits = [int(x) for x in text]*10000
-    digits = digits[skip:]
-    plen    = len(digits)
+    tlen   = len(text)
+    plen   = tlen*10000 - skip
+    digits = []
+    for i in range(skip,plen+skip):
+        digits.append( int(text[i % tlen]) )
 
     for _ in range(phases):
         total = sum(digits)
