@@ -64,6 +64,7 @@ def part2(text,phases=100):
     skip = int(text[:7])
     assert skip < len(text)*10000 <= 2*skip+1
     digits = [int(x) for x in text]*10000
+    digits = digits[skip:]
     plen    = len(digits)
 
     for _ in range(phases):
