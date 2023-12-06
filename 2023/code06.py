@@ -22,11 +22,10 @@ def readdata(data):
     return races
 
 def ways_win(time,record):
-    Delta = time*time - 4*record
+    Delta = time*time - 4*(record+1)
     assert Delta>0
     start = (time - math.sqrt(Delta)) / 2
     start = int(math.ceil(start))
-    if start*(time-start)==record: start+=1
     assert start*(time-start)>0
     return time - 2*start + 1
 
