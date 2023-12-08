@@ -62,6 +62,7 @@ def until_Z(pos,directions,G):
 
 
 def part2(data=None):
+    """Input does really help on this one"""
     directions,G = readdata(data)
     starts = [x for x in G if x[2]=='A']
     arrivals = []
