@@ -12,7 +12,7 @@ NEIG={
     'S':(0,0,0,0)
 }
 
-def type_of_S(M,r,c):
+def fix_S(M,r,c):
     assert M[r][c]=='S'
     dirs=[]
     if M[r-1][c] in '|F7': dirs.append('n')
@@ -21,16 +21,9 @@ def type_of_S(M,r,c):
     if M[r][c-1] in '-LF': dirs.append('w')
     assert len(dirs)==2
     dirs="".join(sorted(dirs))
-    return {"ns":'|', "ew":'-','en':'L',
-            "sw":'7', "nw":'J','es':'F' }[dirs]
+    M[r][c] =  {"ns":'|', "ew":'-','en':'L',
+                "sw":'7', "nw":'J','es':'F' }[dirs]
 
-def findS(M):
-    # search S
-    R,C=len(M),len(M[0])
-    for r in range(R):
-        for c in range(C):
-            if M[r][c]=='S':
-                return r,c
 
 
 EXAMPLE = """..F7.
@@ -89,13 +82,12 @@ def zoom_map(M):
         'J':("J ","  "),
         'F':("F-","| "),
         '7':("7 ","| "),
-        '.':(". ","  ")
+        '.':("  ","  ")
     }
     R,C=len(M),len(M[0])
     NM=[[' ']*(2*C+1) for _ in range(2*R+1)]
     for i in range(R):
         for j in range(C):
-            assert M[i][j]!='S'
             top,bot=zoom[M[i][j]]
             NM[2*i+1][2*j+1]=top[0]; NM[2*i+1][2*j+2]=top[1]
             NM[2*i+2][2*j+1]=bot[0]; NM[2*i+2][2*j+2]=bot[1]
@@ -106,7 +98,11 @@ def readdata(data=None):
     if data is None:
        with open("input10.txt") as f:
             data = f.read()
-    return [list(x) for x in data.splitlines()]
+    start_pos=data.find('S')
+    M = [list(x) for x in data.splitlines()]
+    sr = start_pos//(len(M[0])+1)
+    sc = start_pos %(len(M[0])+1)
+    return M,sr,sc
 
 def nextpos(M,history,current):
     r,c = current
@@ -121,26 +117,16 @@ def nextpos(M,history,current):
 
 def part1(data=None):
     """solve part 1"""
-    M=readdata(data)
-    R,C=len(M),len(M[0])
-    sr,sc = findS(M)
-    A=(0,0)
-    B=(0,0)
-    underS=type_of_S(M,sr,sc)
-    neig=NEIG[underS]
-    A = sr+neig[0],sc+neig[1]
-    B = sr+neig[2],sc+neig[3]
-    hB=hA=(sr,sc)
-    dist=1
-    while abs(A[0]-B[0]) + abs(A[1] - B[1])>1:
-        # move A
-        nA = nextpos(M,hA,A)
-        hA,A = A, nA
-        # move B
-        nB = nextpos(M,hB,B)
-        hB,B = B, nB
-        dist+=1
-    print(dist)
+    M,sr,sc = readdata(data)
+    fix_S(M,sr,sc)
+    neig=NEIG[M[sr][sc]]
+    old = (sr,sc)
+    cur = sr+neig[0],sc+neig[1]
+    length = 1
+    while cur!=(sr,sc):
+        old,cur = cur, nextpos(M,old,cur)
+        length+=1
+    print(length//2)
 
 def flood(M):
     R,C=len(M),len(M[0])
@@ -164,34 +150,26 @@ def flood(M):
 
 def part2(data=None):
     """solve part 2"""
-    M=readdata(data)
-    R,C=len(M),len(M[0])
-    sr,sc = findS(M)
-    M[sr][sc]=type_of_S(M,sr,sc)
+    M,sr,sc = readdata(data)
+    fix_S(M,sr,sc)
     Z=zoom_map(M)
     sr,sc = 2*sr+1,2*sc+1
-    #printm(Z)
-    FLOOD=[[' ']*(len(Z[0])) for _ in range(len(Z))]
-    for i in range(1,len(Z),2):
-        for j in range(1,len(Z[0]),2):
-            FLOOD[i][j] = '.'
+    printm(Z)
     hpos = sr,sc
     neig = NEIG[Z[sr][sc]]
     cpos = sr+neig[0],sc+neig[1]
-    FLOOD[sr][sc]="X"
+    Z[sr][sc]="X"
     while cpos!=(sr,sc):
-        # move
-        assert FLOOD[cpos[0]][cpos[1]] in '. '
-        FLOOD[cpos[0]][cpos[1]]='X'
         npos = nextpos(Z,hpos,cpos)
+        Z[cpos[0]][cpos[1]]='X'
         hpos,cpos = cpos, npos
-    #printm(FLOOD)
-    flood(FLOOD)
-    #printm(FLOOD)
+    printm(Z)
+    flood(Z)
+    printm(Z)
     cnt=0
-    for i in range(len(Z)):
-        for j in range(len(Z[0])):
-            if FLOOD[i][j]=='.':
+    for i in range(1,len(Z),2):
+        for j in range(1,len(Z[0]),2):
+            if Z[i][j]!='X':
                 cnt+=1
     print(cnt)
 
@@ -200,4 +178,4 @@ if __name__ == "__main__":
     part1()
     part2(EXAMPLE2)
     part2(EXAMPLE3)
-    part2()
+    #part2()
