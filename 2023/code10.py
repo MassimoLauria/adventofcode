@@ -12,19 +12,6 @@ NEIG={
     'S':(0,0,0,0)
 }
 
-def fix_S(M,r,c):
-    assert M[r][c]=='S'
-    dirs=[]
-    if M[r-1][c] in '|F7': dirs.append('n')
-    if M[r+1][c] in '|LJ': dirs.append('s')
-    if M[r][c+1] in '-J7': dirs.append('e')
-    if M[r][c-1] in '-LF': dirs.append('w')
-    assert len(dirs)==2
-    dirs="".join(sorted(dirs))
-    M[r][c] =  {"ns":'|', "ew":'-','en':'L',
-                "sw":'7', "nw":'J','es':'F' }[dirs]
-
-
 
 EXAMPLE = """..F7.
 .FJ|.
@@ -56,9 +43,6 @@ L---JF-JLJ.||-FJLJJ7
 L.L7LFJ|||||FJL7||LJ
 L7JLJL-JLJLJL--JLJ.L
 """
-
-
-
 
 def printm(data,pos=None):
     if pos is None:
@@ -102,7 +86,17 @@ def readdata(data=None):
     M = [list(x) for x in data.splitlines()]
     sr = start_pos//(len(M[0])+1)
     sc = start_pos %(len(M[0])+1)
-    return M,sr,sc
+    assert M[sr][sc]=='S'
+    dirs=[]
+    if sr>1 and (M[sr-1][sc] in '|F7'): dirs.append('n')
+    if sr<(len(M)-1) and (M[sr+1][sc] in '|LJ'): dirs.append('s')
+    if sc<(len(M[0])-1) and (M[sr][sc+1] in '-J7'): dirs.append('e')
+    if sc>0 and (M[sr][sc-1] in '-LF'): dirs.append('w')
+    assert len(dirs)==2
+    dirs="".join(sorted(dirs))
+    M[sr][sc] =  {"ns":'|', "ew":'-','en':'L',
+                "sw":'7', "nw":'J','es':'F' }[dirs]
+    return M,(sr,sc)
 
 def nextpos(M,history,current):
     r,c = current
@@ -114,18 +108,16 @@ def nextpos(M,history,current):
     else:
         return m1
 
-
 def part1(data=None):
     """solve part 1"""
-    M,sr,sc = readdata(data)
-    fix_S(M,sr,sc)
-    neig=NEIG[M[sr][sc]]
-    old = (sr,sc)
-    cur = sr+neig[0],sc+neig[1]
-    length = 1
-    while cur!=(sr,sc):
+    M,start = readdata(data)
+    cur = start
+    old = (-1,-1)
+    length = 0
+    while True:
         old,cur = cur, nextpos(M,old,cur)
         length+=1
+        if cur==start: break
     print(length//2)
 
 def flood(M):
@@ -150,22 +142,16 @@ def flood(M):
 
 def part2(data=None):
     """solve part 2"""
-    M,sr,sc = readdata(data)
-    fix_S(M,sr,sc)
+    M,start = readdata(data)
     Z=zoom_map(M)
-    sr,sc = 2*sr+1,2*sc+1
-    printm(Z)
-    hpos = sr,sc
-    neig = NEIG[Z[sr][sc]]
-    cpos = sr+neig[0],sc+neig[1]
-    Z[sr][sc]="X"
-    while cpos!=(sr,sc):
-        npos = nextpos(Z,hpos,cpos)
-        Z[cpos[0]][cpos[1]]='X'
-        hpos,cpos = cpos, npos
-    printm(Z)
+    start = 2*start[0]+1,2*start[1]+1
+    old = (-1,-1)
+    cur = start
+    while True:
+        old,cur = cur, nextpos(Z,old,cur)
+        Z[old[0]][old[1]]='X'
+        if cur==start: break
     flood(Z)
-    printm(Z)
     cnt=0
     for i in range(1,len(Z),2):
         for j in range(1,len(Z[0]),2):
@@ -178,4 +164,4 @@ if __name__ == "__main__":
     part1()
     part2(EXAMPLE2)
     part2(EXAMPLE3)
-    #part2()
+    part2()
