@@ -36,8 +36,6 @@ def transpose(block):
         T[j]="".join(block[i][j] for i in range(R))
     return T
 
-
-
 def printb(block):
     for l in block:
         print(l)
@@ -57,12 +55,12 @@ def readdata(data=None):
     for block in blocks:
         r=into_int(block)
         c=into_int(transpose(block))
-        blockpairs.append((r,c))
+        blockpairs.append((block,r,c))
     return blockpairs
 
 def diff_bits(X,Y):
     if X==Y: return 0
-    diff=abs(X-Y)
+    diff=X^Y
     diff=diff & (diff-1)
     if diff==0: return 1
     return 32
@@ -83,12 +81,21 @@ def part12(bit_switches,data=None):
     """solve part 1 ans 2"""
     pairs=readdata(data)
     somma=0
-    for hor,vert in pairs:
+    i=0
+    for block,hor,vert in pairs:
+        #print("------------------------Block:",i)
         x = find_reflection(hor,bit_switches)
+        y = find_reflection(vert,bit_switches)
+        assert x is not None or y is not None
+        assert x is None or y is None
+        # if x is not None: assert verify_hor(block,x,bit_switches)
+        # if y is not None: assert verify_vert(block,y,bit_switches)
+        # assert x is None or y is None
+        # assert (x is not None) or (y is not None)
+        i+=1
         if x is not None:
             somma+=100*x
         else:
-            y = find_reflection(vert,bit_switches)
             somma+=y
     print(somma)
 
