@@ -20,7 +20,7 @@ UP=0
 LEFT=1
 DOWN=2
 RIGHT=3
-
+CENTER=4
 
 def readdata(data=None):
     """Read and parse the input data"""
@@ -70,25 +70,23 @@ def readdata(data=None):
     return G,R,C
 
 def BFS(G,start):
-    seen = {start:True}
+    touched={start[0:2]}
+    seen = {start}
     Q = deque([start])
     while len(Q)>0:
         u = Q.popleft()
         for v in G[u]:
             if v not in seen:
-                seen[v]=True
+                seen.add(v)
+                touched.add(v[0:2])
                 Q.append(v)
-    return seen
-
+    return len(touched)
 
 def part1(data=None):
     """solve part 1"""
     G,R,C=readdata(data)
     start=(0,0,LEFT)
-    visited=BFS(G,start)
-    touched={(r,c) for (r,c,d) in visited}
-    #print(touched)
-    print(len(touched))
+    print(BFS(G,start))
 
 def part2(data=None):
     """solve part 2"""
@@ -103,10 +101,7 @@ def part2(data=None):
         starts.append((0  ,c  ,UP ))
         starts.append((R-1,0  ,DOWN))
     for start in starts:
-        visited=BFS(G,start)
-        touched={(r,c) for (r,c,d) in visited}
-        if len(touched)>max_touched:
-            max_touched = len(touched)
+        max_touched=max(BFS(G,start),max_touched)
     print(max_touched)
 
 
