@@ -20,79 +20,91 @@ U 2 (#7a21e3)
 
 DELTA={ "U":(-1,0), "D":(1,0), "L":(0,-1),"R":(0,1) }
 
-def printf(POS):
-    rows=[x for (x,y) in POS]
-    cols=[y for (x,y) in POS]
+def readdata(data=None):
+    if data is None:
+        with open("input18.txt") as f:
+            data=f.read()
+    D2D={"0":"R","1":"D","2":"L","3":"U"}
+    p1=[]
+    p2=[]
+    for line in data.splitlines():
+        line=line.split()
+        p1.append((line[0],int(line[1])))
+        d = D2D[line[2][-2]]
+        l = int(line[2][2:-2],16)
+        p2.append((d,l))
+    return p1,p2
+
+def walk_space(start,movelist,Raxes,Caxes):
+    space=dict()
+    r,c=start
+    cur=Raxes.index(r),Caxes.index(c)
+    space[cur]=True
+    for d,l in movelist:
+        dr,dc=DELTA[d]
+        r=r+l*dr
+        c=c+l*dc
+        while Raxes[cur[0]]!=r or Caxes[cur[1]]!=c:
+            cur=cur[0]+dr,cur[1]+dc
+            space[cur]=True
+    return space
+
+def print_map(space):
+    NOP,T,F='.#O'
+    rows=[x for (x,y) in space]
+    cols=[y for (x,y) in space]
     top=min(rows)
     bottom=max(rows)
     left=min(cols)
     right=max(cols)
-    print(top,bottom,left,right)
     for i in range(top,bottom+1):
+        line=[]
         for j in range(left,right+1):
-            if not (i,j) in POS:
-                print(".",end="")
-            elif POS[i,j]==False:
-                print("O",end="")
+            if (i,j) not in space:
+                line.append(NOP)
+            elif space[i,j]:
+                line.append(T)
             else:
-                print("#",end="")
-        print()
+                line.append(F)
+        print("".join(line))
 
-def lava_count(movelist,R_weights=None,C_weights=None):
-    if R_weights is None:
-        R_weights=defaultdict(lambda : 1)
-    if C_weights is None:
-        C_weights=defaultdict(lambda : 1)
-    POS=dict()
-    cur=(0,0)
-    for d,l in movelist:
-        for i in range(l):
-            POS[cur]=True
-            dr,dc=DELTA[d]
-            cur=cur[0]+dr,cur[1]+dc
+
+def flood_map(POS):
     rows=[x for (x,y) in POS]
     cols=[y for (x,y) in POS]
-    top=min(rows)-1
-    bottom=max(rows)+1
-    left=min(cols)-1
-    right=max(cols)+1
+    assert min(rows)==0 and min(cols)==0
+    R=max(rows)+1
+    C=max(cols)+1
     # flood
-    Q=deque([(top,left)])
-    POS[top,left]=False
-    flooded=0
+    Q=deque([(-1,-1)])
+    POS[-1,-1]=False
     while len(Q)>0:
         r,c=Q.popleft()
-        flooded+=1
-        if r<bottom and not (r+1,c) in POS:
+        if r<R and not (r+1,c) in POS:
             Q.append((r+1,c))
             POS[(r+1,c)]=False
-        if r>top and not (r-1,c) in POS:
+        if r>=0 and not (r-1,c) in POS:
             Q.append((r-1,c))
             POS[(r-1,c)]=False
-        if c<right and not (r,c+1) in POS:
+        if c<C and not (r,c+1) in POS:
             Q.append((r,c+1))
             POS[(r,c+1)]=False
-        if c>left and not (r,c-1) in POS:
+        if c>=0 and not (r,c-1) in POS:
             Q.append((r,c-1))
             POS[(r,c-1)]=False
-    count=0
-    for i in range(top,bottom+1):
-        for j in range(left,right+1):
-            if (i,j) not in POS or POS[i,j]:
-                count+=R_weights[i]*C_weights[j]
-    #printf(POS)
-    return count
+    # clean up border
+    for r in range(R):
+        assert POS[r,-1]==False
+        assert POS[r,C]==False
+        POS.pop((r,-1))
+        POS.pop((r,C))
+    for c in range(-1,C+1):
+        assert POS[-1,c]==False
+        assert POS[R,c]==False
+        POS.pop((-1,c))
+        POS.pop((R,c))
+    return R,C
 
-
-def part1(data=None):
-    if data is None:
-        with open("input18.txt") as f:
-            data=f.read()
-    moves=[]
-    for line in data.splitlines():
-        line=line.split()
-        moves.append((line[0],int(line[1])))
-    print(lava_count(moves))
 
 def compress_space(coords):
     coords=sorted(coords)
@@ -109,71 +121,47 @@ def compress_space(coords):
         res.append(coords[i])
     return res
 
-def moves_to_loop(moves):
-    loop=[(0,0)]
-    rows,cols=[0],[0]
-    minrow,maxrow,mincol,maxcol=0,0,0,0
-    # get the axis
+def extract_axes(start,moves):
+    rows,cols=[start[0]],[start[1]]
     for d,l in moves:
         dr,dc=DELTA[d]
-        sr,sc=loop[-1]
-        nr,nc=sr+l*dr,sc+l*dc
-        loop.append((nr,nc))
-    return loop
+        nr,nc=rows[-1]+l*dr,cols[-1]+l*dc
+        rows.append(nr)
+        cols.append(nc)
+    return compress_space(rows),compress_space(cols)
 
-def ticks_to_weights(ticks):
-    W=defaultdict(lambda : 1)
-    for i in range(len(ticks)):
-        if type(ticks[i])==int:
-            W[i]=1
+
+def axes_weights(axes):
+    assert type(axes[0])==int
+    assert type(axes[-1])==int
+    weight=[1]
+    for i in range(1,len(axes)):
+        if type(axes[i])==tuple:
+            w=axes[i][1]-axes[i][0]+1
         else:
-            W[i]=ticks[i][1]-ticks[i][0]+1
-    return W
+            w=1
+        weight.append(w)
+    return weight
 
-def part2(data=None):
-    if data is None:
-        with open("input18.txt") as f:
-            data=f.read()
-    D2D={"0":"R","1":"D","2":"L","3":"U"}
-    moves=[]
-    for line in data.splitlines():
-        line=line.split()
-        d = D2D[line[2][-2]]
-        l = int(line[2][2:-2],16)
-        moves.append((d,l))
-    loop = moves_to_loop(moves)
-    Rticks = compress_space([x for (x,y) in loop])
-    Cticks = compress_space([y for (x,y) in loop])
-    Rweights=ticks_to_weights(Rticks)
-    Cweights=ticks_to_weights(Cticks)
-    # new movelist
-    shortmoves=[]
-    lr,lc=0,0
-    sr,sc=Rticks.index(0),Cticks.index(0)
-    print("Convert")
-    for d,l in moves:
-        dr,dc=DELTA[d]
-        lr,lc=lr+l*dr,lc+l*dc
-        shortlen=0
-        print(d,l,"--->",end="")
-        while Rticks[sr]!=lr or Cticks[sc]!=lc:
-            sr+=dr
-            sc+=dc
-            shortlen+=1
-        print(d,shortlen)
-        shortmoves.append((d,shortlen))
-    # print(moves)
-    # print(loop)
-    # print(shortmoves)
-    # print(Rweights)
-    # print(Cweights)
-    # print(Rticks)
-    # print(Cticks)
-    V=lava_count(shortmoves,Rweights,Cweights)
-    print(V)
+def solve(moves):
+    raxes,caxes=extract_axes((0,0),moves)
+    space=walk_space((0,0),moves,raxes,caxes)
+    R,C = flood_map(space)
+    rweights=axes_weights(raxes)
+    cweights=axes_weights(caxes)
+    count=0
+    for i in range(R):
+        for j in range(C):
+            if (i,j) not in space or space[i,j]:
+                count+=rweights[i]*cweights[j]
+    print(count)
 
 if __name__=="__main__":
-    part1(EXAMPLE)
-    part1()
-    part2(EXAMPLE)
-    part2()
+    ex_p1,ex_p2=readdata(EXAMPLE)
+    in_p1,in_p2=readdata()
+    # part1
+    solve(ex_p1)
+    solve(in_p1)
+    # part3
+    solve(ex_p2)
+    solve(in_p2)
