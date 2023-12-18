@@ -155,11 +155,11 @@ def solve(moves):
     print(count)
 
 
-def alt(moves):
+def solve_geom(moves):
     loop=getloop(moves)
     # A = internal + boundary/2 - 1
     # area = internal + boundary = A + 1 + boundary/2
-    Ax2 = loop_area_shoelace(loop)
+    Ax2 = loop_twice_planar_area(loop)
     bx2 = loop_perimeter(loop)
     return (Ax2 + 2 + bx2) // 2
 
@@ -172,16 +172,18 @@ def getloop(moves):
         points.append((r,c))
     return points
 
-def loop_area_shoelace(loop):
+def loop_twice_planar_area(loop):
     """
-    return  A = internal + boundary/2 -1
+    Area = internal + boundary/2 -1
+
+    we compute it via Shoelace formula
     """
-    A=0
+    Ax2=0
     for i in range(1,len(loop)):
         ar,ac=loop[i-1]
         br,bc=loop[i]
-        A+=(br-ar)*(ac+bc)
-    return A
+        Ax2+=(br-ar)*(ac+bc)
+    return Ax2
 
 def loop_perimeter(loop):
     p=0
@@ -201,7 +203,7 @@ if __name__=="__main__":
     solve(ex_p2)
     solve(in_p2)
     # Pick's shoelaces
-    print(alt(ex_p1))
-    print(alt(in_p1))
-    print(alt(ex_p2))
-    print(alt(in_p2))
+    print(solve_geom(ex_p1))
+    print(solve_geom(in_p1))
+    print(solve_geom(ex_p2))
+    print(solve_geom(in_p2))
