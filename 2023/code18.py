@@ -1,6 +1,4 @@
-
 from collections import deque
-from collections import defaultdict
 
 EXAMPLE="""R 6 (#70c710)
 D 5 (#0dc571)
@@ -156,12 +154,54 @@ def solve(moves):
                 count+=rweights[i]*cweights[j]
     print(count)
 
+
+def alt(moves):
+    loop=getloop(moves)
+    # A = internal + boundary/2 - 1
+    # area = internal + boundary = A + 1 + boundary/2
+    Ax2 = loop_area_shoelace(loop)
+    bx2 = loop_perimeter(loop)
+    return (Ax2 + 2 + bx2) // 2
+
+def getloop(moves):
+    points=[(0,0)]
+    for d,l in moves:
+        dr,dc=DELTA[d]
+        r=points[-1][0]+l*dr
+        c=points[-1][1]+l*dc
+        points.append((r,c))
+    return points
+
+def loop_area_shoelace(loop):
+    """
+    return  A = internal + boundary/2 -1
+    """
+    A=0
+    for i in range(1,len(loop)):
+        ar,ac=loop[i-1]
+        br,bc=loop[i]
+        A+=(br-ar)*(ac+bc)
+    return A
+
+def loop_perimeter(loop):
+    p=0
+    for i in range(1,len(loop)):
+        ar,ac=loop[i-1]
+        br,bc=loop[i]
+        p+=abs(ar-br)+abs(ac-bc)
+    return p
+
 if __name__=="__main__":
     ex_p1,ex_p2=readdata(EXAMPLE)
     in_p1,in_p2=readdata()
     # part1
     solve(ex_p1)
     solve(in_p1)
-    # part3
+    # part2
     solve(ex_p2)
     solve(in_p2)
+    # Pick's shoelaces
+    print(alt(ex_p1))
+    print(alt(in_p1))
+    print(alt(ex_p2))
+    print(alt(in_p2))
