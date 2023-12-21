@@ -167,30 +167,6 @@ def part2(data=None):
                 break
     print(math.lcm(*periods))
 
-
-def explore_circuits(data=None):
-    """solve part 1"""
-    C=readdata(data)
-    #dotgraph(C)
-    periods=[4021,3907,4093,3797]
-    print(f" ------------------ Start ----------")
-    log_circuit(C)
-    print(f" ------------------ Start ----------")
-    for i in range(1,15001):
-        run_pulse(C,LOW)
-        log=False
-        for p in periods:
-            if i%p==0 or i%p==(p-1):
-                log=True
-        if log:
-            log_circuit(C)
-            print(f" ------------------ End of step {i} ----------")
-    #values=defaultdict(list)
-    #run_freq(C,(1,0))
-
-
-periods=[4021,3907,4093,3797]
-
 def log_circuit(C):
     reg1=['tn','md','hh','tc','td','bm','mr','rs','dh','lt','cq','kx',"kb"]
     reg2=['nx','dj','qm','mj','zv','tk','mc','kh','ck','sr','jh','pt',"nh"]
@@ -201,6 +177,7 @@ def log_circuit(C):
     show_counter(C,reg3)
     show_counter(C,reg4)
     print(C['&kc'][1])
+
 
 def show_counter(C,reg):
     assert C["&"+reg[-1]][0]==TYPE_CONJ
