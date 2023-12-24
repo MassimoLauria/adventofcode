@@ -19,48 +19,61 @@ def readdata(data=None):
         hail.append([int(x) for x in line.split()])
     return hail
 
-def solve(A,b):
+def ray_intersect(h1,h2):
+    p1x,p1y,_,v1x,v1y,_=h1
+    p2x,p2y,_,v2x,v2y,_=h2
+    A=[[v1x,-v2x],[v1y,-v2y]]
     detA=A[0][0]*A[1][1]-A[0][1]*A[1][0]
+    b = [p2x-p1x,p2y-p1y]
     if detA==0:
         return None
     sol1=b[0]*A[1][1]-A[0][1]*b[1]
     sol2=A[0][0]*b[1]-b[0]*A[1][0]
-    return (sol1/detA,sol2/detA)
-
-def intersect1(h1,h2):
-    p1x,p1y,_,v1x,v1y,_=h1
-    p2x,p2y,_,v2x,v2y,_=h2
-    A=[[v1x,-v2x],[v1y,-v2y]]
-    b = [p2x-p1x,p2y-p1y]
-    sol = solve(A,b)
-    if sol is None:
-        return None
-    t1,t2 = sol
+    t1,t2 = (sol1/detA,sol2/detA)
     if t1<=0 or t2<=0:
         return None
     return (p2x+v2x*t2,p2y+v2y*t2)
 
 
-def part1(testarea,data=None):
+def part1(ta,data=None):
     """solve part 1"""
     hails=readdata(data)
     N=len(hails)
     intersections=[]
     for i in range(0,N-1):
         for j in range(i+1,N):
-            # print("{}, {}, {} @ {}, {}, {}".format(*hails[i]))
-            # print("{}, {}, {} @ {}, {}, {}".format(*hails[j]))
-            p = intersect1(hails[i],hails[j])
+            p = ray_intersect(hails[i],hails[j])
             if p is not None:
                 intersections.append(p)
     counter=0
     for x,y in intersections:
-        if testarea[0]<=x<=testarea[1] and testarea[0]<=y<=testarea[1]:
+        if ta[0]<=x<=ta[1] and ta[0]<=y<=ta[1]:
             counter+=1
     print(counter)
+
+
+
+def solve(points):
+    points.sort()
+    N=len(points)
+    assert all(v!=0 for _,v in points)
+    assert all(points[i]!=points[i+1] for i in range(N-1))
+    return 0,0
+
+def part2(data=None):
+    hails=readdata(data)
+    N=len(hails)
+    hails=list(zip(*hails))
+    hailsX=list(zip(hails[0],hails[3]))
+    hailsY=list(zip(hails[1],hails[4]))
+    hailsZ=list(zip(hails[2],hails[5]))
+    x,vx= solve(hailsX)
+    y,vy= solve(hailsY)
+    z,vz= solve(hailsZ)
+    print(x+y+z)
 
 
 if __name__ == "__main__":
     part1([7,27],EXAMPLE)
     part1([200000000000000,400000000000000])
-    # part2()
+    part2(EXAMPLE)
