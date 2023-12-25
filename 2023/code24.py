@@ -87,7 +87,7 @@ def check_sol_axis(sp,sv,pos,vel):
             r = (p-sp) % (v-sv)
             if r!=0: return False
     return True
-            
+
 
 def part2old(data=None):
     AOS=readdata(data)
@@ -113,12 +113,14 @@ def part2old(data=None):
     assert (y2-y3) % (vy3-vy2)!=0
     # hence they must meet at three different times
     # and that give us constraints for the Y and Z
-    
+
     print(sum(solution[0:3]))
 
 def part2(data=None):
     AOS=readdata(data)
-    N=len(AOS)
+    N=len(AOS)  # N=3
+          # actually you can get the solution with just 3 hails
+          # but it is not faster...
     T=[z3.Int(f't{i}') for i in range(N)]
     px,vx,py,vy,pz,vz = [ z3.Int(s)
                           for s in "px vx py vy pz vz".split() ]
@@ -135,7 +137,7 @@ def part2(data=None):
     m=solver.model()
     #print(m)
     print(m.evaluate(px+py+pz))
-        
+
 
 if __name__ == "__main__":
     part1([7,27],EXAMPLE)
