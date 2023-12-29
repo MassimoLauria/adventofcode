@@ -2,9 +2,6 @@
 
 Using z3! Is that cheating?
 """
-import math
-from collections import defaultdict
-from random import randint
 
 import z3
 
@@ -80,7 +77,6 @@ def num_value(indexes,array):
     return len(set([array[indexes[i]] for i in [0,1,2]]))
 
 def check_sol_axis(sp,sv,pos,vel):
-    N=len(vel)
     for p,v in zip(pos,vel):
         if v==sv and p!=sv: return False
         else:
@@ -91,8 +87,6 @@ def check_sol_axis(sp,sv,pos,vel):
 
 def part2old(data=None):
     AOS=readdata(data)
-    N=len(AOS)
-    times=[0]*N
     solution=[0,0,0,0,0,0]
     SOA=list(zip(*AOS))
     # three elements have same position and velocity in X
