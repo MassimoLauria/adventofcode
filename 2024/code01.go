@@ -12,14 +12,14 @@ import (
 	"strings"
 )
 
-const example_data = `3   4
+const exampleData = `3   4
 4   3
 2   5
 1   3
 3   9
 3   3`
 
-func read_input_file(filename string) string {
+func readInputFile(filename string) string {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Println("File", filename, "not found")
@@ -28,7 +28,7 @@ func read_input_file(filename string) string {
 	return string(data)
 }
 
-func process_text(data string) ([]int, []int) {
+func processText(data string) ([]int, []int) {
 	lines := strings.Split(data, "\n")
 	n := len(lines)
 	if len(lines[n-1]) == 0 {
@@ -52,18 +52,18 @@ func process_text(data string) ([]int, []int) {
 }
 
 func main() {
-	data := read_input_file("input01.txt")
-	ex_left, ex_right := process_text(example_data)
-	left, right := process_text(data)
-	fmt.Println("Part1 - example ", part1(ex_left, ex_right))
+	data := readInputFile("input01.txt")
+	leftEx, rightEx := processText(exampleData)
+	left, right := processText(data)
+	fmt.Println("Part1 - example ", part1(leftEx, rightEx))
 	fmt.Println("Part1 - solution", part1(left, right))
-	fmt.Println("Part2 - example ", part2(ex_left, ex_right))
+	fmt.Println("Part2 - example ", part2(leftEx, rightEx))
 	fmt.Println("Part2 - solution", part2(left, right))
 }
 
 func part1(left, right []int) int {
 	total := 0
-	for i, _ := range left {
+	for i := range left {
 		total += max(left[i]-right[i], right[i]-left[i])
 	}
 	return total
