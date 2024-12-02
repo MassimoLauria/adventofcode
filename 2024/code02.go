@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"slices"
+	//	"slices"
 )
 
 var ToInt=strconv.Atoi
@@ -71,10 +71,12 @@ func part1(reports [][]int) int {
 
 func part2(reports [][]int) int {
 	safe_reports:=0
+	clean:=make([]int,0,8)  // is enough for input02.txt
 	for _,report:= range reports {
 		for skip:=0;skip<len(report);skip++ {
-			clean:= slices.Concat(report[:skip],report[skip+1:])
-			//fmt.Println(clean)
+			clean = clean[:0]
+			clean = append(clean,report[:skip]...)
+			clean = append(clean,report[skip+1:]...)
 			if is_safe(clean) {
 				safe_reports++
 				break
