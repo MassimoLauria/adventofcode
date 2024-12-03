@@ -39,7 +39,7 @@ func main() {
 func part1(data string) int {
 	var a,b int
 	total:=0
-	r := regexp.MustCompile(`mul\(([\d]{1,3}),([\d]{1,3})\)`)
+	r := regexp.MustCompile(`mul\((\d+),(\d+)\)`)
 	for _,v := range r.FindAllStringSubmatch(data,-1) {
 		a,_ = Atoi(v[1])
 		b,_ = Atoi(v[2])
@@ -52,7 +52,7 @@ func part2(data string) int {
 	var a,b int
 	total:=0
 	enabled:=true
-	r := regexp.MustCompile(`mul\(([\d]{1,3}),([\d]{1,3})\)|do\(\)|don't\(\)`)
+	r := regexp.MustCompile(`mul\((\d+),(\d+)\)|do\(\)|don't\(\)`)
 	for _,v := range r.FindAllStringSubmatch(data,-1) {
 		if v[0]==`do()` {
 			enabled = true
