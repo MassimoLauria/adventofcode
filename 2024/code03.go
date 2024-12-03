@@ -54,11 +54,13 @@ func part2(data string) int {
 	enabled:=true
 	r := regexp.MustCompile(`mul\((\d+),(\d+)\)|do\(\)|don't\(\)`)
 	for _,v := range r.FindAllStringSubmatch(data,-1) {
-		if v[0]==`do()` {
+		switch v[0] {
+		case "do()":
 			enabled = true
-		} else if v[0]==`don't()` {
+		case "don't()":
 			enabled = false
-		} else if enabled {
+		default:
+			if !enabled {continue}
 			a,_ = Atoi(v[1])
 			b,_ = Atoi(v[2])
 			total += a*b
