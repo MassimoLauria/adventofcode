@@ -9,10 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-    "strconv"
 )
-
-var ToInt=strconv.Atoi
 
 const example_data = `MMMSXXMASM
 MSAMXMSMSA
