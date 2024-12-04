@@ -58,22 +58,23 @@ func main() {
 }
 
 func xmas_in_all_directions(text []string, r int, c int) int {
+	if text[r][c]!='X' { return 0 }
+	dirs:=[8][2]int{
+		{-1,-1},{-1,0},{-1,1},
+		{ 0,-1},{0,1},
+		{ 1,-1},{ 1,0},{ 1,1},
+	}
 	n:=len(text)
 	count:=0
-	if text[r][c]!='X' { return count }
-	for dr:=-1;dr<2;dr++ {
-		if r+dr*3 >=n {continue}
-		if r+dr*3 <0  {continue}
-		for dc:=-1;dc<2;dc++ {
-			// which direction should I look
-			if dr==0 && dc==0 { continue }
-			if c+dc*3 >=n {continue}
-			if c+dc*3 <0  {continue}
-			if text[r+1*dr][c+1*dc]!='M' {continue}
-			if text[r+2*dr][c+2*dc]!='A' {continue}
-			if text[r+3*dr][c+3*dc]!='S' {continue}
-			count+=1
-		}
+	for _,d:=range dirs {
+		r1,r2,r3 := r+d[0],r+2*d[0],r+3*d[0]
+		c1,c2,c3 := c+d[1],c+2*d[1],c+3*d[1]
+		if !(0 <= r3 && r3 < n) {continue}
+		if !(0 <= c3 && c3 < n) {continue}
+		if text[r1][c1]!='M' {continue}
+		if text[r2][c2]!='A' {continue}
+		if text[r3][c3]!='S' {continue}
+		count+=1
 	}
 	return count
 }
