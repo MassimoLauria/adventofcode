@@ -96,9 +96,12 @@ func maybe_safe(sequence []int, lo, hi int) bool {
 		diff = sequence[p+1] - sequence[p]
 		if diff < lo || diff > hi { break }
 	}
-	if p>=n-2 {return true}
-	// first violation between p and p+1.
-	// there is an element p+2
+	if p>=n-2 {return true}  // no violation
+
+	// first violation between p and p+1. We know:
+	// - we need to remove either element p or p+1
+	// - there exist an element in position p+2
+	// - from p+2 on, no more violations allowed
 	diff = sequence[p+2] - sequence[p+1]
 	maybe_remove_first :=(lo <= diff && diff <= hi)
 	if p>0 {
@@ -108,6 +111,7 @@ func maybe_safe(sequence []int, lo, hi int) bool {
 	diff = sequence[p+2] - sequence[p]
 	maybe_remove_second:=(lo <= diff && diff <= hi)
 	if !(maybe_remove_first || maybe_remove_second) { return false}
+	// after the first violation, everything must be safe
 	p+=2
 	for ;p<n-1;p++ {
 		diff = sequence[p+1] - sequence[p]
