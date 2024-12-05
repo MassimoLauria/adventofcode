@@ -96,7 +96,7 @@ func maybe_safe(sequence []int, lo, hi int) bool {
 		diff = sequence[p+1] - sequence[p]
 		if diff < lo || diff > hi { break }
 	}
-	if p>=n-2 {return true}  // no violation
+	if p>=n-2 {return true}  // maybe violation at the end
 
 	// first violation between p and p+1. We know:
 	// - we need to remove either element p or p+1
