@@ -10,12 +10,6 @@ import (
 	"os"
 )
 
-var Void = [3]int{-1, -1, -1}
-
-var dirs [4][2]int = [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
-
-const Up = 0
-
 const example_data = `....#.....
 .........#
 ..........
@@ -27,12 +21,17 @@ const example_data = `....#.....
 #.........
 ......#...`
 
+type Conf [4]int
+type WalkCache map[Conf]Conf
+
 type Grid struct {
 	N           int
 	initial_pos [2]int
 	data        map[[2]int]rune
-	cache       map[[3]int][3]int
+	cache       WalkCache
 }
+
+var OutOfGrid = Conf{-1, -1, -1, -1}
 
 func read_input_file(filename string) string {
 	data, err := ioutil.ReadFile(filename)
@@ -47,7 +46,7 @@ func process_text(data string) Grid {
 	r, c := 0, 0
 	lab := Grid{}
 	lab.data = make(map[[2]int]rune)
-	lab.cache = make(map[[3]int][3]int)
+	lab.cache = make(WalkCache)
 	for _, s := range data {
 		switch s {
 		case '\n':
@@ -89,15 +88,14 @@ func part1(lab Grid) int {
 	var next_pos [2]int
 	var c rune
 	var ok bool
-	var d [2]int
+	var temp int
 	current_pos := lab.initial_pos
-	current_dir := Up
+	current_dir := [2]int{-1, 0}
 	lab.data[lab.initial_pos] = 'X'
 
 	for {
-		d = dirs[current_dir]
-		next_pos[0] = current_pos[0] + d[0]
-		next_pos[1] = current_pos[1] + d[1]
+		next_pos[0] = current_pos[0] + current_dir[0]
+		next_pos[1] = current_pos[1] + current_dir[1]
 
 		if next_pos[0] < 0 || next_pos[1] < 0 ||
 			next_pos[0] >= lab.N || next_pos[1] >= lab.N {
@@ -109,8 +107,10 @@ func part1(lab Grid) int {
 			lab.data[next_pos] = 'X'
 			current_pos = next_pos
 		} else {
-			// turn direction
-			current_dir = (current_dir + 1) % len(dirs)
+			// rotate 90 degree clockwise (a,b) --> (b,-a)
+			temp = -current_dir[0]
+			current_dir[0] = current_dir[1]
+			current_dir[1] = temp
 		}
 	}
 	visited := 0
@@ -122,7 +122,7 @@ func part1(lab Grid) int {
 	return visited
 }
 
-func walk_next_event(current_conf [3]int, lab *Grid) [3]int {
+func walk_next_event(current_conf [4]int, lab *Grid) [4]int {
 	var nr, nc int
 	var cr, cc int
 	var dr, dc int
@@ -130,7 +130,7 @@ func walk_next_event(current_conf [3]int, lab *Grid) [3]int {
 	var ok bool
 
 	cr, cc = current_conf[0], current_conf[1]
-	dr, dc = dirs[current_conf[2]][0], dirs[current_conf[2]][1]
+	dr, dc = current_conf[2], current_conf[3]
 
 	for {
 		// compute next move
@@ -138,20 +138,19 @@ func walk_next_event(current_conf [3]int, lab *Grid) [3]int {
 		nc = cc + dc
 
 		if nr < 0 || nc < 0 || nr >= lab.N || nc >= lab.N {
-			return Void
+			return OutOfGrid
 		}
 
 		c, ok = lab.data[[2]int{nr, nc}]
 		if ok && c == '#' {
-			return [3]int{
-				cr, cc, (current_conf[2] + 1) % len(dirs)}
+			return Conf{cr, cc, dc, -dr} // rotate 90 (dr,dc) --> (dc,-dr)
 		}
 		cr, cc = nr, nc
 	}
 }
 
-func may_cache(last, curr [3]int, crate [2]int) bool {
-	return !(last == Void ||
+func may_cache(last, curr [4]int, crate [2]int) bool {
+	return !(last == OutOfGrid ||
 		last[0] == crate[0] ||
 		last[1] == crate[1] ||
 		curr[0] == crate[0] ||
@@ -160,26 +159,26 @@ func may_cache(last, curr [3]int, crate [2]int) bool {
 
 func doesloop(lab *Grid, new_crate [2]int) bool {
 	var ok bool
-	current_conf := [3]int{
+	current_conf := Conf{
 		lab.initial_pos[0],
 		lab.initial_pos[1],
-		Up}
-	maybe_next := Void
-	last_conf := Void
-	reached := make(map[[3]int]bool)
+		-1, 0} // Up
+	var maybe_next Conf
+	var last_conf Conf
+	visited := make(map[Conf]bool)
 	lab.data[new_crate] = '#'
 	for {
 		// compute next move
 		maybe_next, ok = lab.cache[current_conf]
 		if current_conf[0] != new_crate[0] && current_conf[1] != new_crate[1] && ok {
-			last_conf = Void
+			last_conf = OutOfGrid
 			current_conf = maybe_next
 		} else {
 			last_conf = current_conf
 			current_conf = walk_next_event(current_conf, lab)
 		}
 
-		if current_conf == Void { // left the grid
+		if current_conf == OutOfGrid { // left the grid
 			lab.data[new_crate] = 'X'
 			return false
 		}
@@ -189,12 +188,12 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 		}
 
 		//
-		_, ok = reached[current_conf]
+		_, ok = visited[current_conf]
 		if ok {
 			lab.data[new_crate] = 'X'
 			return true
 		}
-		reached[current_conf] = true
+		visited[current_conf] = true
 	}
 }
 
