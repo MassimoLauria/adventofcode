@@ -15,7 +15,7 @@ var ToInt = strconv.Atoi
 
 var dirs [4][2]int = [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
 
-const Up = 0
+func void() [3]int { return [3]int{-1, -1, -1} }
 
 func walk_step(pos [2]int, toward int) [2]int {
 	d := dirs[toward]
@@ -65,7 +65,6 @@ func process_text(data string) Grid {
 			c++
 		case '^':
 			lab.initial_pos = [2]int{r, c}
-			lab.data[[2]int{r, c}] = 'X'
 			c++
 		case '#':
 			lab.data[[2]int{r, c}] = s
@@ -100,7 +99,8 @@ func part1(lab Grid) int {
 	var ok bool
 
 	current_pos := lab.initial_pos
-	current_dir := Up
+	current_dir := 0
+	lab.data[lab.initial_pos] = 'X'
 
 	for {
 		next_pos = walk_step(current_pos, current_dir)
@@ -125,6 +125,54 @@ func part1(lab Grid) int {
 	return visited
 }
 
+func doesloop(lab *Grid, new_crate [2]int) bool {
+	var c rune
+	var ok bool
+	current_pos := lab.initial_pos
+	var next_pos [2]int
+	current_dir := 0
+	turns := make(map[[3]int]bool)
+	var record [3]int
+	lab.data[new_crate] = '#'
+	for {
+		// compute next move
+		next_pos = walk_step(current_pos, current_dir)
+
+		if !inside(next_pos, lab) {
+			lab.data[new_crate] = 'X'
+			return false
+		}
+
+		c, ok = lab.data[next_pos]
+		if !ok || c == 'X' {
+			current_pos = next_pos
+		} else {
+			// take a turn
+			current_dir = (current_dir + 1) % len(dirs)
+			record[0] = current_pos[0]
+			record[1] = current_pos[1]
+			record[2] = current_dir
+			_, ok = turns[record]
+			if ok {
+				lab.data[new_crate] = 'X'
+				return true
+			}
+			turns[record] = true
+		}
+	}
+}
+
 func part2(lab Grid) int {
-	return lab.N
+	loop_locations := 0
+	try_count := 0
+	for place, char := range lab.data {
+		if char == '#' || place == lab.initial_pos {
+			continue
+		}
+		try_count += 1
+		if doesloop(&lab, place) {
+			loop_locations++
+		}
+	}
+	return loop_locations
 }
