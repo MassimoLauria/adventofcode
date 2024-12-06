@@ -21,7 +21,10 @@ const example_data = `....#.....
 #.........
 ......#...`
 
-type Conf [4]int
+type Conf struct {
+	r, c   int
+	dr, dc int
+}
 type WalkCache map[Conf]Conf
 
 type Grid struct {
@@ -31,7 +34,7 @@ type Grid struct {
 	cache       WalkCache
 }
 
-var OutOfGrid = Conf{-1, -1, -1, -1}
+var OutOfGrid = Conf{r: -1, c: -1, dr: -1, dc: -1}
 
 func read_input_file(filename string) string {
 	data, err := ioutil.ReadFile(filename)
@@ -122,15 +125,15 @@ func part1(lab Grid) int {
 	return visited
 }
 
-func walk_next_event(current_conf [4]int, lab *Grid) [4]int {
+func walk_next_event(conf Conf, lab *Grid) Conf {
 	var nr, nc int
 	var cr, cc int
 	var dr, dc int
 	var c rune
 	var ok bool
 
-	cr, cc = current_conf[0], current_conf[1]
-	dr, dc = current_conf[2], current_conf[3]
+	cr, cc = conf.r, conf.c
+	dr, dc = conf.dr, conf.dc
 
 	for {
 		// compute next move
@@ -149,20 +152,20 @@ func walk_next_event(current_conf [4]int, lab *Grid) [4]int {
 	}
 }
 
-func may_cache(last, curr [4]int, crate [2]int) bool {
+func may_cache(last, curr Conf, crate [2]int) bool {
 	return !(last == OutOfGrid ||
-		last[0] == crate[0] ||
-		last[1] == crate[1] ||
-		curr[0] == crate[0] ||
-		curr[1] == crate[1])
+		last.r == crate[0] ||
+		last.c == crate[1] ||
+		curr.r == crate[0] ||
+		curr.c == crate[1])
 }
 
 func doesloop(lab *Grid, new_crate [2]int) bool {
 	var ok bool
 	current_conf := Conf{
-		lab.initial_pos[0],
-		lab.initial_pos[1],
-		-1, 0} // Up
+		r:  lab.initial_pos[0],
+		c:  lab.initial_pos[1],
+		dr: -1, dc: 0} // Up
 	var maybe_next Conf
 	var last_conf Conf
 	visited := make(map[Conf]bool)
@@ -170,7 +173,7 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 	for {
 		// compute next move
 		maybe_next, ok = lab.cache[current_conf]
-		if current_conf[0] != new_crate[0] && current_conf[1] != new_crate[1] && ok {
+		if current_conf.r != new_crate[0] && current_conf.c != new_crate[1] && ok {
 			last_conf = OutOfGrid
 			current_conf = maybe_next
 		} else {
