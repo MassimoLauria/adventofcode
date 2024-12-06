@@ -88,32 +88,30 @@ func main() {
 }
 
 func part1(lab Grid) int {
-	var next_pos [2]int
+	var cr, cc, nr, nc, dr, dc int
 	var c rune
 	var ok bool
-	var temp int
-	current_pos := lab.initial_pos
-	current_dir := [2]int{-1, 0}
+	cr, cc = lab.initial_pos[0], lab.initial_pos[1]
+	dr, dc = -1, 0
 	lab.data[lab.initial_pos] = 'X'
 
 	for {
-		next_pos[0] = current_pos[0] + current_dir[0]
-		next_pos[1] = current_pos[1] + current_dir[1]
+		nr = cr + dr
+		nc = cc + dc
 
-		if next_pos[0] < 0 || next_pos[1] < 0 ||
-			next_pos[0] >= lab.N || next_pos[1] >= lab.N {
+		if nr < 0 || nc < 0 || nr >= lab.N || nc >= lab.N {
 			break
 		}
 
-		c, ok = lab.data[next_pos]
+		query := [2]int{nr, nc}
+		c, ok = lab.data[query]
 		if !ok || c == 'X' {
-			lab.data[next_pos] = 'X'
-			current_pos = next_pos
+			// keep walking
+			lab.data[query] = 'X'
+			cr, cc = nr, nc
 		} else {
-			// rotate 90 degree clockwise (a,b) --> (b,-a)
-			temp = -current_dir[0]
-			current_dir[0] = current_dir[1]
-			current_dir[1] = temp
+			// rotate 90 degree clockwise
+			dr, dc = dc, -dr
 		}
 	}
 	visited := 0
