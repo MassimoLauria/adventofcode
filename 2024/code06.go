@@ -160,10 +160,15 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 	var last_conf Conf
 	visited := make(map[Conf]bool)
 	lab.data[new_crate] = '#'
+
+	colinear_with_crate := func() bool {
+		return current_conf.r ==
+			new_crate[0] || current_conf.c == new_crate[1]
+	}
 	for {
 		// compute next move, maybe looking at the cache
 		maybe_next, ok = lab.cache[current_conf]
-		if ok && current_conf.r != new_crate[0] && current_conf.c != new_crate[1] {
+		if ok && !colinear_with_crate() {
 			last_conf = InvalidConf
 			current_conf = maybe_next
 		} else {
@@ -178,9 +183,7 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 		}
 
 		// should I cache last walk segment?
-		if last_conf != InvalidConf && // no, already cached
-			current_conf.r != new_crate[0] && // no, maybe involves the new crate
-			current_conf.c != new_crate[1] {
+		if last_conf != InvalidConf && !colinear_with_crate() {
 			lab.cache[last_conf] = current_conf
 		}
 
