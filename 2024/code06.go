@@ -150,14 +150,6 @@ func walk_next_event(conf Conf, lab *Grid) Conf {
 	}
 }
 
-func may_cache(last, curr Conf, crate [2]int) bool {
-	return !(last == InvalidConf ||
-		last.r == crate[0] ||
-		last.c == crate[1] ||
-		curr.r == crate[0] ||
-		curr.c == crate[1])
-}
-
 func doesloop(lab *Grid, new_crate [2]int) bool {
 	var ok bool
 	current_conf := Conf{
@@ -169,9 +161,9 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 	visited := make(map[Conf]bool)
 	lab.data[new_crate] = '#'
 	for {
-		// compute next move
+		// compute next move, maybe looking at the cache
 		maybe_next, ok = lab.cache[current_conf]
-		if current_conf.r != new_crate[0] && current_conf.c != new_crate[1] && ok {
+		if ok && current_conf.r != new_crate[0] && current_conf.c != new_crate[1] {
 			last_conf = InvalidConf
 			current_conf = maybe_next
 		} else {
@@ -179,16 +171,20 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 			current_conf = walk_next_event(current_conf, lab)
 		}
 
-		if current_conf == InvalidConf { // left the grid
+		// left the grid
+		if current_conf == InvalidConf {
 			lab.data[new_crate] = 'X'
 			return false
 		}
 
-		if may_cache(last_conf, current_conf, new_crate) {
+		// should I cache last walk segment?
+		if last_conf != InvalidConf && // no, already cached
+			current_conf.r != new_crate[0] && // no, maybe involves the new crate
+			current_conf.c != new_crate[1] {
 			lab.cache[last_conf] = current_conf
 		}
 
-		//
+		// already visited configuration? that's a loop!
 		_, ok = visited[current_conf]
 		if ok {
 			lab.data[new_crate] = 'X'
