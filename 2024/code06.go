@@ -123,27 +123,30 @@ func part1(lab Grid) int {
 }
 
 func walk_next_event(current_conf [3]int, lab *Grid) [3]int {
-	var next_conf [3]int
+	var nr, nc int
+	var cr, cc int
+	var dr, dc int
 	var c rune
 	var ok bool
+
+	cr, cc = current_conf[0], current_conf[1]
+	dr, dc = dirs[current_conf[2]][0], dirs[current_conf[2]][1]
+
 	for {
 		// compute next move
-		next_conf[0] = current_conf[0] + dirs[current_conf[2]][0]
-		next_conf[1] = current_conf[1] + dirs[current_conf[2]][1]
-		next_conf[2] = current_conf[2]
+		nr = cr + dr
+		nc = cc + dc
 
-		if next_conf[0] < 0 || next_conf[1] < 0 ||
-			next_conf[0] >= lab.N || next_conf[1] >= lab.N {
+		if nr < 0 || nc < 0 || nr >= lab.N || nc >= lab.N {
 			return Void
 		}
 
-		c, ok = lab.data[[2]int{next_conf[0], next_conf[1]}]
-
+		c, ok = lab.data[[2]int{nr, nc}]
 		if ok && c == '#' {
-			current_conf[2] = (current_conf[2] + 1) % len(dirs)
-			return current_conf
+			return [3]int{
+				cr, cc, (current_conf[2] + 1) % len(dirs)}
 		}
-		current_conf = next_conf
+		cr, cc = nr, nc
 	}
 }
 
