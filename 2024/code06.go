@@ -8,19 +8,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 )
 
-var ToInt = strconv.Atoi
+var Void = [3]int{-1, -1, -1}
 
 var dirs [4][2]int = [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
 
-func void() [3]int { return [3]int{-1, -1, -1} }
-
-func walk_step(pos [2]int, toward int) [2]int {
-	d := dirs[toward]
-	return [2]int{pos[0] + d[0], pos[1] + d[1]}
-}
+const Up = 0
 
 const example_data = `....#.....
 .........#
@@ -37,10 +31,7 @@ type Grid struct {
 	N           int
 	initial_pos [2]int
 	data        map[[2]int]rune
-}
-
-func inside(pos [2]int, lab *Grid) bool {
-	return (0 <= pos[0]) && (pos[0] < lab.N) && (0 <= pos[1]) && (pos[1] < lab.N)
+	cache       map[[3]int][3]int
 }
 
 func read_input_file(filename string) string {
@@ -56,6 +47,7 @@ func process_text(data string) Grid {
 	r, c := 0, 0
 	lab := Grid{}
 	lab.data = make(map[[2]int]rune)
+	lab.cache = make(map[[3]int][3]int)
 	for _, s := range data {
 		switch s {
 		case '\n':
@@ -97,16 +89,21 @@ func part1(lab Grid) int {
 	var next_pos [2]int
 	var c rune
 	var ok bool
-
+	var d [2]int
 	current_pos := lab.initial_pos
-	current_dir := 0
+	current_dir := Up
 	lab.data[lab.initial_pos] = 'X'
 
 	for {
-		next_pos = walk_step(current_pos, current_dir)
-		if !inside(next_pos, &lab) {
+		d = dirs[current_dir]
+		next_pos[0] = current_pos[0] + d[0]
+		next_pos[1] = current_pos[1] + d[1]
+
+		if next_pos[0] < 0 || next_pos[1] < 0 ||
+			next_pos[0] >= lab.N || next_pos[1] >= lab.N {
 			break
 		}
+
 		c, ok = lab.data[next_pos]
 		if !ok || c == 'X' {
 			lab.data[next_pos] = 'X'
@@ -125,40 +122,76 @@ func part1(lab Grid) int {
 	return visited
 }
 
-func doesloop(lab *Grid, new_crate [2]int) bool {
+func walk_next_event(current_conf [3]int, lab *Grid) [3]int {
+	var next_conf [3]int
 	var c rune
 	var ok bool
-	current_pos := lab.initial_pos
-	var next_pos [2]int
-	current_dir := 0
-	turns := make(map[[3]int]bool)
-	var record [3]int
+	for {
+		// compute next move
+		next_conf[0] = current_conf[0] + dirs[current_conf[2]][0]
+		next_conf[1] = current_conf[1] + dirs[current_conf[2]][1]
+		next_conf[2] = current_conf[2]
+
+		if next_conf[0] < 0 || next_conf[1] < 0 ||
+			next_conf[0] >= lab.N || next_conf[1] >= lab.N {
+			return Void
+		}
+
+		c, ok = lab.data[[2]int{next_conf[0], next_conf[1]}]
+
+		if ok && c == '#' {
+			current_conf[2] = (current_conf[2] + 1) % len(dirs)
+			return current_conf
+		}
+		current_conf = next_conf
+	}
+}
+
+func may_cache(last, curr [3]int, crate [2]int) bool {
+	return !(last == Void ||
+		last[0] == crate[0] ||
+		last[1] == crate[1] ||
+		curr[0] == crate[0] ||
+		curr[1] == crate[1])
+}
+
+func doesloop(lab *Grid, new_crate [2]int) bool {
+	var ok bool
+	current_conf := [3]int{
+		lab.initial_pos[0],
+		lab.initial_pos[1],
+		Up}
+	maybe_next := Void
+	last_conf := Void
+	reached := make(map[[3]int]bool)
 	lab.data[new_crate] = '#'
 	for {
 		// compute next move
-		next_pos = walk_step(current_pos, current_dir)
+		maybe_next, ok = lab.cache[current_conf]
+		if current_conf[0] != new_crate[0] && current_conf[1] != new_crate[1] && ok {
+			last_conf = Void
+			current_conf = maybe_next
+		} else {
+			last_conf = current_conf
+			current_conf = walk_next_event(current_conf, lab)
+		}
 
-		if !inside(next_pos, lab) {
+		if current_conf == Void { // left the grid
 			lab.data[new_crate] = 'X'
 			return false
 		}
 
-		c, ok = lab.data[next_pos]
-		if !ok || c == 'X' {
-			current_pos = next_pos
-		} else {
-			// take a turn
-			current_dir = (current_dir + 1) % len(dirs)
-			record[0] = current_pos[0]
-			record[1] = current_pos[1]
-			record[2] = current_dir
-			_, ok = turns[record]
-			if ok {
-				lab.data[new_crate] = 'X'
-				return true
-			}
-			turns[record] = true
+		if may_cache(last_conf, current_conf, new_crate) {
+			lab.cache[last_conf] = current_conf
 		}
+
+		//
+		_, ok = reached[current_conf]
+		if ok {
+			lab.data[new_crate] = 'X'
+			return true
+		}
+		reached[current_conf] = true
 	}
 }
 
