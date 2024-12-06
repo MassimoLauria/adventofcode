@@ -34,7 +34,7 @@ type Grid struct {
 	cache       WalkCache
 }
 
-var OutOfGrid = Conf{r: -1, c: -1, dr: -1, dc: -1}
+var InvalidConf = Conf{r: -1, c: -1, dr: -1, dc: -1}
 
 func read_input_file(filename string) string {
 	data, err := ioutil.ReadFile(filename)
@@ -141,7 +141,7 @@ func walk_next_event(conf Conf, lab *Grid) Conf {
 		nc = cc + dc
 
 		if nr < 0 || nc < 0 || nr >= lab.N || nc >= lab.N {
-			return OutOfGrid
+			return InvalidConf
 		}
 
 		c, ok = lab.data[[2]int{nr, nc}]
@@ -153,7 +153,7 @@ func walk_next_event(conf Conf, lab *Grid) Conf {
 }
 
 func may_cache(last, curr Conf, crate [2]int) bool {
-	return !(last == OutOfGrid ||
+	return !(last == InvalidConf ||
 		last.r == crate[0] ||
 		last.c == crate[1] ||
 		curr.r == crate[0] ||
@@ -174,14 +174,14 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 		// compute next move
 		maybe_next, ok = lab.cache[current_conf]
 		if current_conf.r != new_crate[0] && current_conf.c != new_crate[1] && ok {
-			last_conf = OutOfGrid
+			last_conf = InvalidConf
 			current_conf = maybe_next
 		} else {
 			last_conf = current_conf
 			current_conf = walk_next_event(current_conf, lab)
 		}
 
-		if current_conf == OutOfGrid { // left the grid
+		if current_conf == InvalidConf { // left the grid
 			lab.data[new_crate] = 'X'
 			return false
 		}
@@ -202,12 +202,10 @@ func doesloop(lab *Grid, new_crate [2]int) bool {
 
 func part2(lab Grid) int {
 	loop_locations := 0
-	try_count := 0
 	for place, char := range lab.data {
 		if char == '#' || place == lab.initial_pos {
 			continue
 		}
-		try_count += 1
 		if doesloop(&lab, place) {
 			loop_locations++
 		}
