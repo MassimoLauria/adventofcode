@@ -15,12 +15,7 @@ var ToInt = strconv.Atoi
 
 var dirs [4][2]int = [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
 
-const (
-	Up = iota
-	Right
-	Down
-	Left
-)
+const Up = 0
 
 func walk_step(pos [2]int, toward int) [2]int {
 	d := dirs[toward]
@@ -100,11 +95,13 @@ func main() {
 }
 
 func part1(lab Grid) int {
-	current_pos := lab.initial_pos
 	var next_pos [2]int
 	var c rune
 	var ok bool
+
+	current_pos := lab.initial_pos
 	current_dir := Up
+
 	for {
 		next_pos = walk_step(current_pos, current_dir)
 		if !inside(next_pos, &lab) {
