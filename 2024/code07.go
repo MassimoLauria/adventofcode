@@ -92,6 +92,14 @@ func digits10(x int64) int64 {
 	return i
 }
 
+func can_end_in_product(target int64, last int64) bool {
+	return target%(last) == 0
+}
+
+func can_end_in_concat(target int64, last int64) bool {
+	return target%digits10(last) == last
+}
+
 func is_sat(value, target int64, operands []int64, idx int, part2 bool) bool {
 	if idx == len(operands) {
 		return value == target
@@ -99,6 +107,17 @@ func is_sat(value, target int64, operands []int64, idx int, part2 bool) bool {
 	if value > target {
 		return false
 	}
+
+	// preprocess tail when sum is the only possible way
+	tail := operands[len(operands)-1]
+	if idx == 0 && !can_end_in_product(target, tail) &&
+		(!part2 || !can_end_in_concat(target, tail)) {
+		// we can only do sum at last step
+		ntarget := target - tail
+		noperands := operands[:len(operands)-1]
+		return is_sat(0, ntarget, noperands, 0, part2)
+	}
+
 	var temp int64
 	temp = value * operands[idx]
 	if temp <= target {
