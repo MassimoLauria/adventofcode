@@ -70,16 +70,6 @@ func main() {
 	fmt.Println("Part2 - solution ", part2(values))
 }
 
-func part1(equations []Equation) int64 {
-	var total int64 = 0
-	for _, equation := range equations {
-		if is_sat(0, equation.target, equation.operands, 0, false) {
-			total += equation.target
-		}
-	}
-	return total
-}
-
 func digits10(x int64) int64 {
 	var i int64 = 1
 	if x == 0 {
@@ -100,8 +90,8 @@ func can_end_in_concat(target int64, last int64) bool {
 	return target%digits10(last) == last
 }
 
-func is_sat(value, target int64, operands []int64, idx int, part2 bool) bool {
-	if idx == len(operands) {
+func is_sat(value, target int64, operands []int64, start int, end int, part2 bool) bool {
+	if start > end {
 		return value == target
 	}
 	if value > target {
@@ -109,44 +99,47 @@ func is_sat(value, target int64, operands []int64, idx int, part2 bool) bool {
 	}
 
 	// preprocess tail when sum is the only possible way
-	tail := operands[len(operands)-1]
-	if idx == 0 && !can_end_in_product(target, tail) &&
+	tail := operands[end]
+	if !can_end_in_product(target, tail) &&
 		(!part2 || !can_end_in_concat(target, tail)) {
 		// we can only do sum at last step
-		ntarget := target - tail
-		noperands := operands[:len(operands)-1]
-		return is_sat(0, ntarget, noperands, 0, part2)
+		return is_sat(value, target-tail, operands, start, end-1, part2)
 	}
 
 	var temp int64
-	temp = value * operands[idx]
-	if temp <= target {
-		if is_sat(temp, target, operands, idx+1, part2) {
-			return true
-		}
+	temp = value * operands[start]
+	if is_sat(temp, target, operands, start+1, end, part2) {
+		return true
 	}
-	temp = value + operands[idx]
-	if temp <= target {
-		if is_sat(temp, target, operands, idx+1, part2) {
-			return true
-		}
+	temp = value + operands[start]
+	if is_sat(temp, target, operands, start+1, end, part2) {
+		return true
 	}
 	if !part2 {
 		return false
 	}
-	temp = value*digits10(operands[idx]) + operands[idx]
-	if temp <= target {
-		if is_sat(temp, target, operands, idx+1, true) {
-			return true
-		}
+	temp = value*digits10(operands[start]) + operands[start]
+	if is_sat(temp, target, operands, start+1, end, true) {
+		return true
 	}
 	return false
 }
 
+func part1(equations []Equation) int64 {
+	return solve(equations, false)
+}
+
 func part2(equations []Equation) int64 {
+	return solve(equations, true)
+}
+
+func solve(equations []Equation, isPart2 bool) int64 {
 	var total int64 = 0
+	var value int64 = 0
 	for _, equation := range equations {
-		if is_sat(0, equation.target, equation.operands, 0, true) {
+		value = equation.operands[0]
+		if is_sat(value, equation.target, equation.operands,
+			1, len(equation.operands)-1, isPart2) {
 			total += equation.target
 		}
 	}
