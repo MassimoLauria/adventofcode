@@ -115,23 +115,19 @@ func gcd(a, b int) int {
 func collectLine(n int, a, b [2]int, touched map[[2]int]bool) {
 	var d0, d1, g int
 	var s [2]int
-	d0 = a[0] - b[0]
-	d1 = a[1] - b[1]
+	d0, d1 = a[0]-b[0], a[1]-b[1]
 	g = gcd(d0, d1)
 	d0 /= g
 	d1 /= g
 	s = a
 	for inside(s, n) {
 		touched[s] = true
-		s[0] = s[0] + d0
-		s[1] = s[1] + d1
+		s[0], s[1] = s[0]+d0, s[1]+d1
 	}
-	s[0] = a[0] - d0
-	s[1] = a[1] - d1
+	s[0], s[1] = a[0]-d0, a[1]-d1
 	for inside(s, n) {
 		touched[s] = true
-		s[0] = s[0] - d0
-		s[1] = s[1] - d1
+		s[0], s[1] = s[0]-d0, s[1]-d1
 	}
 }
 
