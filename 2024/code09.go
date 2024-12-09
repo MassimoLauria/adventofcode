@@ -43,6 +43,9 @@ func processText(data string) ([]Block, []Hole) {
 	var hole Hole
 	var size int
 	for i, bvalue := range data {
+		if bvalue == '\n' {
+			break
+		}
 		size = int(bvalue - '0')
 		if i%2 == 0 { // new file
 			file.id = i / 2
@@ -64,11 +67,13 @@ func processText(data string) ([]Block, []Hole) {
 
 func main() {
 	data := readInputFile("input09.txt")
+	var efiles, files []Block
+	var eholes, holes []Hole
 
-	efiles, eholes := processText(exampleData)
+	efiles, eholes = processText(exampleData)
 	fmt.Println("Part1 - example", part1(efiles, eholes))
 
-	files, holes := processText(data)
+	files, holes = processText(data)
 	fmt.Println("Part1 - solution ", part1(files, holes))
 
 	efiles, eholes = processText(exampleData)
@@ -122,14 +127,16 @@ func checksum(files []Block) int {
 }
 
 func part2(files []Block, holes []Hole) int {
+	starts := [10]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	for fp := len(files) - 1; fp >= 0; fp-- {
 		// move file fp
-		for i := 0; i < len(holes); i++ {
+		for i := starts[files[fp].size]; i < len(holes); i++ {
 			if holes[i].pos > files[fp].pos {
 				break
 			}
 			if holes[i].size >= files[fp].size {
 				// move file here
+				starts[files[fp].size] = i
 				holes[i].size = holes[i].size - files[fp].size
 				files[fp].pos = holes[i].pos
 				holes[i].pos = holes[i].pos + files[fp].size
