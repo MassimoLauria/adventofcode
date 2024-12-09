@@ -8,10 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 )
-
-var ToInt = strconv.Atoi
 
 const exampleData = `2333133121414131402`
 
@@ -70,16 +67,12 @@ func main() {
 	var efiles, files []Block
 	var eholes, holes []Hole
 
-	efiles, eholes = processText(exampleData)
-	fmt.Println("Part1 - example", part1(efiles, eholes))
+	fmt.Println("Part1 - example", part1(exampleData))
+	fmt.Println("Part1 - solution ", part1(data))
 
+	efiles, eholes = processText(exampleData)
 	files, holes = processText(data)
-	fmt.Println("Part1 - solution ", part1(files, holes))
-
-	efiles, eholes = processText(exampleData)
 	fmt.Println("Part2 - example", part2(efiles, eholes))
-
-	files, holes = processText(data)
 	fmt.Println("Part2 - solution ", part2(files, holes))
 }
 
@@ -100,22 +93,44 @@ func print_disk(files []Block) {
 	fmt.Printf("\n")
 }
 
-func split(files []Block) []Block {
-	newfiles := make([]Block, 0)
-	newfile := Block{pos: 0, size: 1, id: 0}
-	for _, file := range files {
-		for i := file.pos; i < file.pos+file.size; i++ {
-			newfile.id = file.id
-			newfile.pos = i
-			newfiles = append(newfiles, newfile)
+func part1(data string) int {
+	disk := make([]int, 0)
+	var size int
+	for i, bvalue := range data {
+		size = int(bvalue - '0')
+		switch true {
+		case bvalue == '\n': // end of string
+			break
+		case i%2 == 0: // new file
+			for j := 0; j < size; j++ {
+				disk = append(disk, i/2)
+			}
+		case size != 0: // non empty hole
+			for j := 0; j < size; j++ {
+				disk = append(disk, -1)
+			}
 		}
 	}
-	return newfiles
-}
-
-func part1(files []Block, holes []Hole) int {
-	nfiles := split(files)
-	return part2(nfiles, holes)
+	start := 0
+	end := len(disk) - 1
+	for start < end {
+		switch true {
+		case disk[start] >= 0:
+			start++
+		case disk[end] < 0:
+			end--
+		default:
+			disk[start] = disk[end]
+			disk[end] = -1
+		}
+	}
+	c := 0
+	i := 0
+	for disk[i] >= 0 {
+		c += i * disk[i]
+		i++
+	}
+	return c
 }
 
 func checksum(files []Block) int {
@@ -127,7 +142,7 @@ func checksum(files []Block) int {
 }
 
 func part2(files []Block, holes []Hole) int {
-	starts := [10]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	var starts [10]int
 	for fp := len(files) - 1; fp >= 0; fp-- {
 		// move file fp
 		for i := starts[files[fp].size]; i < len(holes); i++ {
