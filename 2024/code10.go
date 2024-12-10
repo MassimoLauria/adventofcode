@@ -122,11 +122,15 @@ func part1(G Digraph) int {
 func part2(G Digraph) int {
 	howmany := make(map[Vertex]int)
 	queue := make([]Vertex, 0)
-	for _, start := range G.starts {
-		queue = append(queue, start)
-		howmany[start] = 1
+	S := Vertex{-1, -2}
+	G.arcs[S] = G.starts
+	T := Vertex{-2, -2}
+	for _, v := range G.ends {
+		G.arcs[v] = append(G.arcs[v], T)
 	}
+	queue = append(queue, S)
 	qidx := 0
+	howmany[S] = 1
 	var v, w Vertex
 	for qidx < len(queue) {
 		v = queue[qidx]
@@ -138,11 +142,5 @@ func part2(G Digraph) int {
 		}
 		qidx++
 	}
-	score := 0
-	for v, h := range howmany {
-		if G.value[v] == 9 {
-			score += h
-		}
-	}
-	return score
+	return howmany[T]
 }
