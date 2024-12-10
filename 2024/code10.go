@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var ToInt = strconv.Atoi
@@ -82,13 +83,19 @@ func processText(data string) Digraph {
 }
 
 func main() {
-	data := readInputFile("input10.txt")
 	example := processText(exampleData)
+	clock := time.Now()
+	data := readInputFile("input10.txt")
 	values := processText(data)
-	fmt.Println("Part1 - example  ", part1(example))
-	fmt.Println("Part1 - solution ", part1(values))
-	fmt.Println("Part2 - example", part2(example))
-	fmt.Println("Part2 - solution ", part2(values))
+	fmt.Printf("Load time                             (%10s)\n", time.Since(clock))
+	clock = time.Now()
+	fmt.Printf("Part1 - example  %20d (%10s)\n", part1(example), time.Since(clock))
+	clock = time.Now()
+	fmt.Printf("Part1 - solution %20d (%10s)\n", part1(values), time.Since(clock))
+	clock = time.Now()
+	fmt.Printf("Part2 - example  %20d (%10s)\n", part2(example), time.Since(clock))
+	clock = time.Now()
+	fmt.Printf("Part2 - solution %20d (%10s)\n", part2(values), time.Since(clock))
 }
 
 func part1(G Digraph) int {
