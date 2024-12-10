@@ -72,11 +72,7 @@ func main() {
 
 func digits10(x int64) int64 {
 	var i int64 = 1
-	if x == 0 {
-		return 10
-	}
-	for x > 0 {
-		x = x / 10
+	for i <= x {
 		i *= 10
 	}
 	return i
