@@ -37,12 +37,6 @@ func main() {
 	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(challenge), time.Since(clock))
 }
 
-func processText(data []byte) int {
-	data = bytes.TrimSpace(data)
-	lines := bytes.Split(data, []byte("\n"))
-	return len(lines)
-}
-
 func splitNumber(v int) (int, int, bool) {
 	block := 1
 	for v/(block*block) > 0 {
