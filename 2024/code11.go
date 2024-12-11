@@ -28,13 +28,13 @@ func main() {
 	}
 	fmt.Printf("Load time                                     - %s\n", time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part1 - example   : %-25d - %s\n", part1(example), time.Since(clock))
+	fmt.Printf("Part1 - example   : %-25d - %s\n", solve(example, 25), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part1 - challenge : %-25d - %s\n", part1(challenge), time.Since(clock))
+	fmt.Printf("Part1 - challenge : %-25d - %s\n", solve(challenge, 25), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - example   : %-25d - %s\n", part2(example), time.Since(clock))
+	fmt.Printf("Part2 - example   : %-25d - %s\n", solve(example, 75), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(challenge), time.Since(clock))
+	fmt.Printf("Part2 - challenge : %-25d - %s\n", solve(challenge, 75), time.Since(clock))
 }
 
 func splitNumber(v int) (int, int, bool) {
@@ -45,44 +45,35 @@ func splitNumber(v int) (int, int, bool) {
 	return v / block, v % block, (10*v)/(block*block) > 0
 }
 
-type StoneCache map[[2]int]int
-
-func score_stone(cache StoneCache, stone int, blinks int) int {
-	if blinks == 0 {
-		return 1
-	}
-	query := [2]int{stone, blinks}
-	result, ok := cache[query]
-	if ok {
-		return result
-	}
-	if stone == 0 {
-		result = score_stone(cache, 1, blinks-1)
-		cache[query] = result
-		return result
-	}
-	if a, b, split := splitNumber(stone); split {
-		result = score_stone(cache, a, blinks-1) + score_stone(cache, b, blinks-1)
-	} else {
-		result = score_stone(cache, stone*2024, blinks-1)
-	}
-	cache[query] = result
-	return result
-}
-
 func solve(stones []int, blinks int) int {
 	score := 0
-	cache := make(StoneCache)
-	for _, stone := range stones {
-		score += score_stone(cache, stone, blinks)
+	count := make(map[int]int)
+	var next map[int]int
+	var l, r int
+	var split bool
+	// load
+	for _, s := range stones {
+		count[s] += 1
+	}
+	for b := 0; b < blinks; b++ {
+		next = make(map[int]int)
+		for s, n := range count {
+			if s == 0 {
+				next[1] += n
+				continue
+			}
+			l, r, split = splitNumber(s)
+			if split {
+				next[l] += n
+				next[r] += n
+			} else {
+				next[s*2024] += n
+			}
+		}
+		count = next
+	}
+	for _, n := range count {
+		score += n //score_stone(cache, stone, blinks)
 	}
 	return score
-}
-
-func part1(stones []int) int {
-	return solve(stones, 25)
-}
-
-func part2(stones []int) int {
-	return solve(stones, 75)
 }
