@@ -112,23 +112,21 @@ func part2(grid [][]byte) int {
 	N := len(grid)
 	var ids [][]int
 	nextid := 1
-	price := 0
-	var a, s int
 	ids = make([][]int, N)
 	for i := 0; i < N; i++ {
 		ids[i] = make([]int, N)
 	}
+	areas := make([]int, 1)
 	for i := 0; i < N; i++ {
 		for j := 0; j < N; j++ {
 			if ids[i][j] > 0 {
 				continue
 			}
 			ids[i][j] = nextid
-			a, _ = flood(i, j, grid, ids)
-			s = countSides(i, j, ids)
-			price += a * s
+			a, _ := flood(i, j, grid, ids)
+			areas = append(areas, a)
 			nextid++
 		}
 	}
-	return price
+	return 0
 }
