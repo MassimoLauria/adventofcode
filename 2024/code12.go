@@ -104,10 +104,6 @@ func part1(grid [][]byte) int {
 	return price
 }
 
-func countSides(i, j int, ids [][]int) int {
-	return 0
-}
-
 func part2(grid [][]byte) int {
 	N := len(grid)
 	var ids [][]int
@@ -127,6 +123,56 @@ func part2(grid [][]byte) int {
 			areas = append(areas, a)
 			nextid++
 		}
+	}
+	corners := make([]int, len(areas))
+	// 4 corners
+	corners[ids[0][0]] += 1
+	corners[ids[0][N-1]] += 1
+	corners[ids[N-1][0]] += 1
+	corners[ids[N-1][N-1]] += 1
+	// corners on the sides
+	for i := 1; i < N; i++ {
+		if ids[0][i-1] != ids[0][i] {
+			corners[ids[0][i-1]] += 1
+			corners[ids[0][i]] += 1
+		}
+		if ids[N-1][i-1] != ids[N-1][i] {
+			corners[ids[N-1][i-1]] += 1
+			corners[ids[N-1][i]] += 1
+		}
+		if ids[i-1][0] != ids[i][0] {
+			corners[ids[i-1][0]] += 1
+			corners[ids[i][0]] += 1
+		}
+		if ids[i-1][N-1] != ids[i][N-1] {
+			corners[ids[i-1][N-1]] += 1
+			corners[ids[i][N-1]] += 1
+		}
+	}
+	var tr, tl, br, bl int
+	for i := 1; i < N; i++ {
+		for j := 1; j < N; j++ {
+			tl, tr = ids[i-1][j-1], ids[i-1][j]
+			bl, br = ids[i][j-1], ids[i][j]
+			if tl != bl && tl != tr {
+				corners[tl] += 1
+			}
+			if bl != tl && bl != br {
+				corners[bl] += 1
+			}
+			if tr != br && tr != tl {
+				corners[tr] += 1
+			}
+			if br != tr && br != bl {
+				corners[br] += 1
+			}
+		}
+	}
+	if N != 10 {
+		return 0
+	}
+	for i := 1; i < len(areas); i++ {
+		fmt.Printf("Region %d  a: %d c: %d\n", i, areas[i], corners[i])
 	}
 	return 0
 }
