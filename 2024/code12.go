@@ -152,27 +152,25 @@ func part2(grid [][]byte) int {
 	var tr, tl, br, bl int
 	for i := 1; i < N; i++ {
 		for j := 1; j < N; j++ {
+			// 2x2 block of region IDs
 			tl, tr = ids[i-1][j-1], ids[i-1][j]
 			bl, br = ids[i][j-1], ids[i][j]
-			if tl != bl && tl != tr {
-				corners[tl] += 1
-			}
-			if bl != tl && bl != br {
-				corners[bl] += 1
-			}
-			if tr != br && tr != tl {
-				corners[tr] += 1
-			}
-			if br != tr && br != bl {
-				corners[br] += 1
+			for t := 0; t < 4; t++ {
+				// has the top left region a corner at the center of
+				// the block?
+				if tl != bl && tl != tr {
+					corners[tl] += 1
+				} else if tl != br && tl == tr && tl == bl {
+					corners[tl] += 1
+				}
+				// rotate the block
+				tl, tr, br, bl = tr, br, bl, tl
 			}
 		}
 	}
-	if N != 10 {
-		return 0
-	}
+	score := 0
 	for i := 1; i < len(areas); i++ {
-		fmt.Printf("Region %d  a: %d c: %d\n", i, areas[i], corners[i])
+		score += areas[i] * corners[i]
 	}
-	return 0
+	return score
 }
