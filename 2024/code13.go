@@ -54,12 +54,13 @@ func processText(data []byte) []int {
 		panic(err)
 	}
 	m := r.FindAllStringSubmatch(string(data), -1)
-	prizes := make([]int, 0, len(m))
+	var x int
+	values := make([]int, 0, len(m))
 	for _, v := range m {
-		x, _ := strconv.Atoi(v[1])
-		prizes = append(prizes, x)
+		x, _ = strconv.Atoi(v[1])
+		values = append(values, x)
 	}
-	return prizes
+	return values
 }
 
 func solve(values []int, p2 bool) int {
