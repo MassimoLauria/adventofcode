@@ -39,13 +39,13 @@ func main() {
 	challenge := processText(data)
 	fmt.Printf("Load time                                     - %s\n", time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part1 - example   : %-25d - %s\n", part1(example), time.Since(clock))
+	fmt.Printf("Part1 - example   : %-25d - %s\n", solve(example, false), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part1 - challenge : %-25d - %s\n", part1(challenge), time.Since(clock))
+	fmt.Printf("Part1 - challenge : %-25d - %s\n", solve(challenge, false), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - example   : %-25d - %s\n", part2(example), time.Since(clock))
+	fmt.Printf("Part2 - example   : %-25d - %s\n", solve(example, true), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(challenge), time.Since(clock))
+	fmt.Printf("Part2 - challenge : %-25d - %s\n", solve(challenge, true), time.Since(clock))
 }
 
 func processText(data []byte) []int {
@@ -62,41 +62,26 @@ func processText(data []byte) []int {
 	return prizes
 }
 
-func part1(values []int) int {
+func solve(values []int, solve bool) int {
 	if len(values)%6 != 0 {
 		log.Fatalln("Invalid data")
 	}
 	score := 0
+	var ax, ay, bx, by, X, Y, pa, pb, det int
 	for i := 0; i < len(values); i += 6 {
-		ax, ay := values[i], values[i+1]
-		bx, by := values[i+2], values[i+3]
-		X, Y := values[i+4], values[i+5]
-		det := ax*by - bx*ay // always non zero, apparently
-		vA := X*by - bx*Y
-		vB := ax*Y - X*ay
-		if vA%det == 0 && vB%det == 0 {
-			// always positive solutions, apparently
-			score += 3*vA/det + vB/det
+		ax, ay = values[i], values[i+1]
+		bx, by = values[i+2], values[i+3]
+		X, Y = values[i+4], values[i+5]
+		if solve {
+			X += 10000000000000
+			Y += 10000000000000
 		}
-	}
-	return score
-}
-
-func part2(values []int) int {
-	if len(values)%6 != 0 {
-		log.Fatalln("Invalid data")
-	}
-	score := 0
-	for i := 0; i < len(values); i += 6 {
-		ax, ay := values[i], values[i+1]
-		bx, by := values[i+2], values[i+3]
-		X, Y := 10000000000000+values[i+4], 10000000000000+values[i+5]
-		det := ax*by - bx*ay // always non zero, apparently
-		vA := X*by - bx*Y
-		vB := ax*Y - X*ay
-		if vA%det == 0 && vB%det == 0 {
+		det = ax*by - bx*ay // always non zero, apparently
+		pa = X*by - bx*Y
+		pb = ax*Y - X*ay
+		if pa%det == 0 && pb%det == 0 {
 			// always positive solutions, apparently
-			score += 3*vA/det + vB/det
+			score += 3*pa/det + pb/det
 		}
 	}
 	return score
