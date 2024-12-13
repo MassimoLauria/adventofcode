@@ -50,7 +50,7 @@ func main() {
 
 func processText(data string) []int {
 	values := make([]int, 0)
-	r, _ := regexp.Compile(`\d+`)
+	r := regexp.MustCompile(`\d+`)
 	m := r.FindAllStringSubmatch(data, -1)
 	var x int
 	for i := 0; i < len(m); i++ {
