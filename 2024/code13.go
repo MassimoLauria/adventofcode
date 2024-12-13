@@ -66,17 +66,38 @@ func part1(values []int) int {
 	if len(values)%6 != 0 {
 		log.Fatalln("Invalid data")
 	}
-	// for i := 0; i < len(values); i += 6 {
-	// 	ax, ay, X, Y := values[i], values[i+1]
-	// 	bx, by := values[i+2], values[i+3]
-	// 	X, Y := values[i+4], values[i+5]
-	// }
-	return len(values)
+	score := 0
+	for i := 0; i < len(values); i += 6 {
+		ax, ay := values[i], values[i+1]
+		bx, by := values[i+2], values[i+3]
+		X, Y := values[i+4], values[i+5]
+		det := ax*by - bx*ay // always non zero, apparently
+		vA := X*by - bx*Y
+		vB := ax*Y - X*ay
+		if vA%det == 0 && vB%det == 0 {
+			// always positive solutions, apparently
+			score += 3*vA/det + vB/det
+		}
+	}
+	return score
 }
 
 func part2(values []int) int {
 	if len(values)%6 != 0 {
 		log.Fatalln("Invalid data")
 	}
-	return len(values)
+	score := 0
+	for i := 0; i < len(values); i += 6 {
+		ax, ay := values[i], values[i+1]
+		bx, by := values[i+2], values[i+3]
+		X, Y := 10000000000000+values[i+4], 10000000000000+values[i+5]
+		det := ax*by - bx*ay // always non zero, apparently
+		vA := X*by - bx*Y
+		vB := ax*Y - X*ay
+		if vA%det == 0 && vB%det == 0 {
+			// always positive solutions, apparently
+			score += 3*vA/det + vB/det
+		}
+	}
+	return score
 }
