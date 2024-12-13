@@ -62,23 +62,18 @@ func processText(data []byte) []int {
 	return prizes
 }
 
-func solve(values []int, solve bool) int {
-	if len(values)%6 != 0 {
-		log.Fatalln("Invalid data")
-	}
+func solve(values []int, p2 bool) int {
 	score := 0
-	var ax, ay, bx, by, X, Y, pa, pb, det int
+	var X, Y, pa, pb, det int
 	for i := 0; i < len(values); i += 6 {
-		ax, ay = values[i], values[i+1]
-		bx, by = values[i+2], values[i+3]
 		X, Y = values[i+4], values[i+5]
-		if solve {
+		if p2 {
 			X += 10000000000000
 			Y += 10000000000000
 		}
-		det = ax*by - bx*ay // always non zero, apparently
-		pa = X*by - bx*Y
-		pb = ax*Y - X*ay
+		det = values[i]*values[i+3] - values[i+2]*values[i+1] // always non zero, apparently
+		pa = X*values[i+3] - values[i+2]*Y
+		pb = values[i]*Y - X*values[i+1]
 		if pa%det == 0 && pb%det == 0 {
 			// always positive solutions, apparently
 			score += 3*pa/det + pb/det
