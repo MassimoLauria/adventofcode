@@ -47,14 +47,6 @@ func main() {
 		time.Since(clock))
 }
 
-func rem(N, D int) int {
-	if N%D < 0 {
-		return N%D + D
-	} else {
-		return N % D
-	}
-}
-
 func processText(data string) []int {
 	values := make([]int, 0)
 	r := regexp.MustCompile(`-?\d+`)
@@ -67,39 +59,13 @@ func processText(data string) []int {
 	return values
 }
 
-func grid(values []int, W, H int) {
-	var c, x, y int
-	gridmap := make([]byte, W*H)
-	for i := 0; i < W*H; i++ {
-		gridmap[i] = '.'
-	}
-	for i := 0; i < len(values); i += 4 {
-		c = values[i+1]*W + values[i]
-		if gridmap[c] == '.' {
-			gridmap[c] = '1'
-		} else if gridmap[c] == '9' {
-			gridmap[c] = '0'
-		} else {
-			gridmap[c] += 1
-		}
-	}
-	c = 0
-	for y = 0; y < H; y += 1 {
-		for x = 0; x < W; x += 1 {
-			fmt.Printf("%c", gridmap[c])
-			c++
-		}
-		fmt.Println()
-	}
-}
-
 func part1(values []int, W, H int) int {
 	var quads [4]int
 	qpos := 0
 	x, y := 0, 0
 	for i := 0; i < len(values); i += 4 {
-		x = rem(values[i]+100*values[i+2], W)
-		y = rem(values[i+1]+100*values[i+3], H)
+		x = (values[i] + 100*values[i+2] + 100*W) % W
+		y = (values[i+1] + 100*values[i+3] + 100*H) % H
 		if x != W/2 && y != H/2 {
 			qpos = 0
 			if x > W/2 {
@@ -118,51 +84,85 @@ func part1(values []int, W, H int) int {
 	return r
 }
 
-func heuristic(values []int, W, H int) int {
-	return 0
+func printPositions(X, Y []int) {
+	N := len(X)
+	W := 0
+	H := 0
+	var r, c int
+	positions := make(map[[2]int]int)
+	for i := 0; i < N; i++ {
+		W = max(W, X[i])
+		H = max(H, Y[i])
+		positions[[2]int{X[i], Y[i]}] += 1
+	}
+	for r = 0; r < H; r++ {
+		for c = 0; c < W; c++ {
+			v, ok := positions[[2]int{c, r}]
+			if !ok {
+				fmt.Print(".")
+			} else {
+				fmt.Print(v % 10)
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Println()
 }
 
-// Solve equation a+tb = v (mod P)
-// for t, assuming P is prime
-// t is positive
-func solveLin(a, b, v, P int) int {
-	b = rem(b, P) //
-	binv := 0
-	for i := 1; i < P; i++ {
-		if rem(i*b, P) == 1 {
-			binv = i
-			break
+func heuristic(X, Y []int) bool {
+	N := len(X)
+	var i int
+	var pos [2]int
+	positions := make(map[[2]int]int)
+	for i = 0; i < N; i++ {
+		positions[[2]int{X[i], Y[i]}] += 1
+	}
+	for i = 0; i < N; i++ {
+		// check pattern
+		//   #
+		//  ###
+		// #####
+		found := true
+	FindLoop:
+		for r := 0; r < 3; r++ {
+			for c := -r; c <= r; c++ {
+				pos = [2]int{X[i] + c, Y[i] + r}
+				_, ok := positions[pos]
+				found = found && ok
+				if !found {
+					break FindLoop
+				}
+			}
+		}
+		if found {
+			return true
 		}
 	}
-	return rem(binv*(v-a), P)
+	return false
 }
 
 func part2(values []int, W, H int) int {
-	max_v := 0
-	max_t := 0
-	v := 0
 	// Normalize
+	N := len(values) / 4
+	xs, ys := make([]int, N), make([]int, N)
+	dx, dy := make([]int, N), make([]int, N)
 	for i := 0; i < len(values); i += 4 {
-		if values[i+2] < 0 {
-			values[i+2] += W
-		}
-		if values[i+3] < 0 {
-			values[i+3] += H
-		}
+		xs[i/4] = values[i]
+		ys[i/4] = values[i+1]
+		dx[i/4] = (values[i+2] + W) % W
+		dy[i/4] = (values[i+3] + H) % H
 	}
-	for T := 0; T < 1000; T += 1 {
-		v = 0
-		for i := 0; i < len(values); i += 4 {
-			values[i] = (values[i] + values[i+2]) % W
-			values[i+1] = (values[i+1] + values[i+3]) % H
+	cx, cy := make([]int, N), make([]int, N)
+	T := 0
+	for {
+		for i := 0; i < N; i++ {
+			cx[i] = (xs[i] + T*dx[i]) % W
+			cy[i] = (ys[i] + T*dy[i]) % H
 		}
-		v = heuristic(values, W, H)
-		if v > max_v {
-			max_t = T
-			max_v = v
+		if heuristic(cx, cy) {
+			return T
 		}
+		T++
 	}
-	fmt.Println(max_t, "with", max_v, "robot on central line")
-	grid(values, W, H)
-	return len(values)
+	return 0
 }
