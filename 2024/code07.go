@@ -78,28 +78,24 @@ func digits10(x int64) int64 {
 	return i
 }
 
-func can_end_in_product(target int64, last int64) bool {
-	return target%(last) == 0
-}
-
-func can_end_in_concat(target int64, last int64) bool {
-	return target%digits10(last) == last
-}
-
 func is_sat(value, target int64, operands []int64, start int, end int, part2 bool) bool {
-	if start > end {
-		return value == target
-	}
 	if value > target {
 		return false
 	}
 
 	// preprocess tail when sum is the only possible way
 	tail := operands[end]
-	if !can_end_in_product(target, tail) &&
-		(!part2 || !can_end_in_concat(target, tail)) {
+	if start <= end &&
+		target%(tail) != 0 && // can't end with product
+		(!part2 || target%digits10(tail) != tail) { // can't end with concat
 		// we can only do sum at last step
-		return is_sat(value, target-tail, operands, start, end-1, part2)
+		target -= tail
+		end -= 1
+		tail = operands[end]
+	}
+
+	if start > end {
+		return value == target
 	}
 
 	var temp int64
