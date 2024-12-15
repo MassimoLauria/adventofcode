@@ -161,10 +161,6 @@ func canMove(grid Grid, r, c, dr, dc int, cache map[[2]int]bool) bool {
 }
 
 func doMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) {
-	if free == nil {
-		free = make(map[[2]int]bool)
-		canMove(grid, rr, rc, dr, dc, free)
-	}
 	v, ok := free[[2]int{r, c}]
 	if !ok || !v {
 		return
@@ -215,9 +211,9 @@ func part2(grid Grid, moves [][2]int) int {
 	rr, rc := N/2-1, N-2
 	for _, dir := range moves {
 		dr, dc := dir[0], dir[1]
-		//free := make(map[[2]int]bool)
-		//canMove(grid, rr, rc, dr, dc, free)
-		doMove(grid, rr, rc, dr, dc, nil)
+		free := make(map[[2]int]bool)
+		canMove(grid, rr, rc, dr, dc, free)
+		doMove(grid, rr, rc, dr, dc, free)
 		if grid[rr][rc] != '@' {
 			rr += dr
 			rc += dc
