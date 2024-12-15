@@ -135,9 +135,9 @@ func processText(data []byte) (Grid, [][2]int) {
 	return grid, moves
 }
 
-func canMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) bool {
+func canMove(grid Grid, r, c, dr, dc int, cache map[[2]int]bool) bool {
 	var v, ok bool
-	v, ok = free[[2]int{r, c}]
+	v, ok = cache[[2]int{r, c}]
 	if ok {
 		return v
 	}
@@ -147,20 +147,24 @@ func canMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) bool {
 	case grid[r][c] == '.':
 		return true
 	case grid[r][c] == 'O' || grid[r][c] == '@' || dc != 0:
-		ok = canMove(grid, r+dr, c+dc, dr, dc, free)
-		free[[2]int{r, c}] = ok
-	case grid[r][c] == ']':
-		ok = canMove(grid, r, c-1, dr, dc, free)
+		ok = canMove(grid, r+dr, c+dc, dr, dc, cache)
+		cache[[2]int{r, c}] = ok
+	case grid[r][c] == ']': // vertical box movement from ]
+		ok = canMove(grid, r, c-1, dr, dc, cache)
 	default: // vertical box movement from [
-		ok = canMove(grid, r+dr, c+dc, dr, dc, free) &&
-			canMove(grid, r+dr, c+1+dc, dr, dc, free)
-		free[[2]int{r, c + 1}] = ok
-		free[[2]int{r, c}] = ok
+		ok = canMove(grid, r+dr, c+dc, dr, dc, cache) &&
+			canMove(grid, r+dr, c+1+dc, dr, dc, cache)
+		cache[[2]int{r, c + 1}] = ok
+		cache[[2]int{r, c}] = ok
 	}
 	return ok
 }
 
 func doMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) {
+	if free == nil {
+		free = make(map[[2]int]bool)
+		canMove(grid, rr, rc, dr, dc, free)
+	}
 	v, ok := free[[2]int{r, c}]
 	if !ok || !v {
 		return
@@ -211,9 +215,9 @@ func part2(grid Grid, moves [][2]int) int {
 	rr, rc := N/2-1, N-2
 	for _, dir := range moves {
 		dr, dc := dir[0], dir[1]
-		free := make(map[[2]int]bool)
-		canMove(grid, rr, rc, dr, dc, free)
-		doMove(grid, rr, rc, dr, dc, free)
+		//free := make(map[[2]int]bool)
+		//canMove(grid, rr, rc, dr, dc, free)
+		doMove(grid, rr, rc, dr, dc, nil)
 		if grid[rr][rc] != '@' {
 			rr += dr
 			rc += dc
