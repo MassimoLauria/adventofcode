@@ -53,11 +53,7 @@ func main() {
 	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(cgrid, cmoves), time.Since(clock))
 }
 
-// up, right, down, left
-var FourWays = [4][2]int{{-1, 0}, {0, +1}, {+1, 0}, {0, -1}}
-
 type Grid [][]byte
-type Moves []int
 
 func printGrid(g Grid) {
 	for _, s := range g {
@@ -65,7 +61,52 @@ func printGrid(g Grid) {
 	}
 }
 
-func processText(data []byte) (Grid, Moves) {
+func copyGrid(g Grid) Grid {
+	newg := make(Grid, len(g))
+	for i := 0; i < len(g); i++ {
+		newg[i] = make([]byte, len(g[i]))
+		copy(newg[i], g[i])
+	}
+	return newg
+}
+
+func doubleGrid(g Grid) Grid {
+	N := len(g)
+	newg := make(Grid, N)
+	var a, b byte
+	for i := 0; i < len(g); i++ {
+		newg[i] = make([]byte, 2*N)
+		for j := 0; j < N; j++ {
+			switch g[i][j] {
+			case '#':
+				a, b = '#', '#'
+			case '.':
+				a, b = '.', '.'
+			case '@':
+				a, b = '@', '.'
+			case 'O':
+				a, b = '[', ']'
+			}
+			newg[i][2*j] = a
+			newg[i][2*j+1] = b
+		}
+	}
+	return newg
+}
+
+func scoreGrid(g Grid, char byte) int {
+	score := 0
+	for r := 0; r < len(g); r++ {
+		for c := 0; c < len(g[r]); c++ {
+			if g[r][c] == char {
+				score += 100*r + c
+			}
+		}
+	}
+	return score
+}
+
+func processText(data []byte) (Grid, [][2]int) {
 	data = bytes.TrimSpace(data)
 	lines := bytes.Split(data, []byte("\n"))
 	grid := make(Grid, 0)
@@ -76,29 +117,78 @@ func processText(data []byte) (Grid, Moves) {
 		}
 		grid = append(grid, lines[i])
 	}
-	moves := make(Moves, 0)
+	moves := make([][2]int, 0)
 	for ; i < len(lines); i++ {
 		for j := 0; j < len(lines[i]); j++ {
 			switch lines[i][j] {
 			case '^':
-				moves = append(moves, 0)
+				moves = append(moves, [2]int{-1, 0})
 			case '>':
-				moves = append(moves, 1)
+				moves = append(moves, [2]int{0, +1})
 			case 'v':
-				moves = append(moves, 2)
+				moves = append(moves, [2]int{+1, 0})
 			case '<':
-				moves = append(moves, 3)
+				moves = append(moves, [2]int{0, -1})
 			}
 		}
 	}
 	return grid, moves
 }
 
-func part1(grid Grid, moves Moves) int {
+func canMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) bool {
+	var v, ok bool
+	v, ok = free[[2]int{r, c}]
+	if ok {
+		return v
+	}
+	switch {
+	case grid[r][c] == '#':
+		return false
+	case grid[r][c] == '.':
+		return true
+	case grid[r][c] == 'O' || grid[r][c] == '@' || dc != 0:
+		ok = canMove(grid, r+dr, c+dc, dr, dc, free)
+		free[[2]int{r, c}] = ok
+	case grid[r][c] == ']':
+		ok = canMove(grid, r, c-1, dr, dc, free)
+	default: // vertical box movement from [
+		ok = canMove(grid, r+dr, c+dc, dr, dc, free) &&
+			canMove(grid, r+dr, c+1+dc, dr, dc, free)
+		free[[2]int{r, c + 1}] = ok
+		free[[2]int{r, c}] = ok
+	}
+	return ok
+}
+
+func doMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) {
+	v, ok := free[[2]int{r, c}]
+	if !ok || !v {
+		return
+	}
+	switch {
+	case grid[r][c] == '.':
+	case grid[r][c] == 'O' || grid[r][c] == '@' || dc != 0:
+		doMove(grid, r+dr, c+dc, dr, dc, free)
+		grid[r+dr][c+dc] = grid[r][c]
+		grid[r][c] = '.'
+	case grid[r][c] == ']':
+		doMove(grid, r, c-1, dr, dc, free)
+	default: // vertical box movement from [
+		doMove(grid, r+dr, c+dc, dr, dc, free)
+		doMove(grid, r+dr, c+dc+1, dr, dc, free)
+		grid[r+dr][c+dc] = '['
+		grid[r+dr][c+dc+1] = ']'
+		grid[r][c] = '.'
+		grid[r][c+1] = '.'
+	}
+}
+
+func part1(grid Grid, moves [][2]int) int {
+	grid = copyGrid(grid)
 	N := len(grid)
-	rr, rc := (N-1)/2, (N-1)/2
+	rr, rc := N/2-1, N/2-1
 	for _, dir := range moves {
-		dr, dc := FourWays[dir][0], FourWays[dir][1]
+		dr, dc := dir[0], dir[1]
 		tr, tc := rr+dr, rc+dc
 		for grid[tr][tc] == 'O' {
 			tr, tc = tr+dr, tc+dc
@@ -112,17 +202,22 @@ func part1(grid Grid, moves Moves) int {
 		rc += dc
 		grid[rr][rc] = '@'
 	}
-	score := 0
-	for r := 0; r < N; r++ {
-		for c := 0; c < N; c++ {
-			if grid[r][c] == 'O' {
-				score += 100*r + c
-			}
-		}
-	}
-	return score
+	return scoreGrid(grid, 'O')
 }
 
-func part2(grid Grid, moves Moves) int {
-	return len(moves)
+func part2(grid Grid, moves [][2]int) int {
+	N := len(grid)
+	grid = doubleGrid(grid)
+	rr, rc := N/2-1, N-2
+	for _, dir := range moves {
+		dr, dc := dir[0], dir[1]
+		free := make(map[[2]int]bool)
+		canMove(grid, rr, rc, dr, dc, free)
+		doMove(grid, rr, rc, dr, dc, free)
+		if grid[rr][rc] != '@' {
+			rr += dr
+			rc += dc
+		}
+	}
+	return scoreGrid(grid, '[')
 }
