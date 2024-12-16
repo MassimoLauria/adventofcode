@@ -88,6 +88,8 @@ type Conf struct {
 	dr, dc int
 }
 
+// Priority Queue (sort of)
+
 type ConfQueueItem struct {
 	conf Conf
 	cost int
@@ -125,7 +127,7 @@ func part1(grid [][]byte) int {
 	heap.Push(queue, ConfQueueItem{conf: start, cost: 0})
 	var top ConfQueueItem
 	finalCost := make(map[Conf]int)
-	var reached bool
+	reached := false
 	var minCost int
 	// start exploration
 	for queue.Len() > 0 {
@@ -161,7 +163,46 @@ func part1(grid [][]byte) int {
 			}
 		}
 	}
+	cache := make(map[Conf]bool)
+	inPath(start, finalCost, cache, grid)
+	tiles := make(map[[2]int]bool)
+	for k, v := range cache {
+		if v {
+			tiles[[2]int{k.r, k.c}] = true
+		}
+	}
+	fmt.Println(len(tiles))
 	return minCost
+}
+
+func inPath(from Conf, finalCost map[Conf]int, cache map[Conf]bool, grid [][]byte) bool {
+	var ok bool
+	var thisCost int
+	if v, ok := cache[from]; ok {
+		return v
+	}
+	if thisCost, ok = finalCost[from]; !ok {
+		return false
+	}
+	if grid[from.r][from.c] == 'E' {
+		cache[from] = true
+		return true
+	}
+	res := false
+	turnleft := Conf{r: from.r, c: from.c, dr: -from.dc, dc: from.dr}
+	turnright := Conf{r: from.r, c: from.c, dr: from.dc, dc: -from.dr}
+	forward := Conf{r: from.r + from.dr, c: from.c + from.dc, dr: from.dr, dc: from.dc}
+	if v, _ := finalCost[turnleft]; v == thisCost+1000 && inPath(turnleft, finalCost, cache, grid) {
+		res = true
+	}
+	if v, _ := finalCost[turnright]; v == thisCost+1000 && inPath(turnright, finalCost, cache, grid) {
+		res = true
+	}
+	if v, _ := finalCost[forward]; v == thisCost+1 && inPath(forward, finalCost, cache, grid) {
+		res = true
+	}
+	cache[from] = res
+	return res
 }
 
 func part2(grid [][]byte) int {
