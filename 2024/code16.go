@@ -50,12 +50,6 @@ const example2 = `
 #################
 `
 
-func assert(b bool) {
-	if !b {
-		log.Fatal("Assertion failed")
-	}
-}
-
 func main() {
 	example1 := processText([]byte(example1))
 	example2 := processText([]byte(example2))
@@ -65,17 +59,26 @@ func main() {
 		log.Fatal(err)
 	}
 	challenge := processText(data)
+	d := time.Since(clock)
 	fmt.Printf("Load time                                     - %s\n", time.Since(clock))
+
+	var p1, p2 int
+
 	clock = time.Now()
-	fmt.Printf("Part1 - example1   : %-25d - %s\n", part1(example1), time.Since(clock))
+	p1, p2 = part12(example1)
+	d = time.Since(clock)
+	fmt.Printf("Part1 - example1   : %-25d - %s\n", p1, d)
+	fmt.Printf("Part2 - example1   : %-25d - %s\n", p2, d)
 	clock = time.Now()
-	fmt.Printf("Part1 - example2   : %-25d - %s\n", part1(example2), time.Since(clock))
+	p1, p2 = part12(example2)
+	d = time.Since(clock)
+	fmt.Printf("Part1 - example2   : %-25d - %s\n", p1, d)
+	fmt.Printf("Part2 - example2   : %-25d - %s\n", p2, d)
 	clock = time.Now()
-	fmt.Printf("Part1 - challenge : %-25d - %s\n", part1(challenge), time.Since(clock))
-	clock = time.Now()
-	fmt.Printf("Part2 - example   : %-25d - %s\n", part2(example1), time.Since(clock))
-	clock = time.Now()
-	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(challenge), time.Since(clock))
+	p1, p2 = part12(challenge)
+	d = time.Since(clock)
+	fmt.Printf("Part1 - challenge  : %-25d - %s\n", p1, d)
+	fmt.Printf("Part2 - challenge  : %-25d - %s\n", p2, d)
 }
 
 func processText(data []byte) [][]byte {
@@ -115,7 +118,7 @@ func (h *PQueue) Pop() any {
 	return x
 }
 
-func part1(grid [][]byte) int {
+func part12(grid [][]byte) (int, int) {
 	N := len(grid)
 	var cf Conf
 	var dist int
@@ -127,13 +130,14 @@ func part1(grid [][]byte) int {
 	heap.Push(queue, ConfQueueItem{conf: start, cost: 0})
 	var top ConfQueueItem
 	finalCost := make(map[Conf]int)
+	useful := make(map[Conf]bool)
 	reached := false
 	var minCost int
 	// start exploration
 	for queue.Len() > 0 {
 		top = heap.Pop(queue).(ConfQueueItem)
 		cf, dist = top.conf, top.cost
-		if reached && top.cost > minCost {
+		if reached && dist > minCost {
 			continue
 		}
 		_, ok := finalCost[cf]
@@ -145,6 +149,7 @@ func part1(grid [][]byte) int {
 		if grid[cf.r][cf.c] == 'E' && !reached {
 			reached = true
 			minCost = dist
+			useful[cf] = true
 			continue
 		}
 		//
@@ -163,19 +168,18 @@ func part1(grid [][]byte) int {
 			}
 		}
 	}
-	cache := make(map[Conf]bool)
-	inPath(start, finalCost, cache, grid)
+	inPath(start, finalCost, useful)
 	tiles := make(map[[2]int]bool)
-	for k, v := range cache {
+	for k, v := range useful {
 		if v {
 			tiles[[2]int{k.r, k.c}] = true
 		}
 	}
-	fmt.Println(len(tiles))
-	return minCost
+
+	return minCost, len(tiles)
 }
 
-func inPath(from Conf, finalCost map[Conf]int, cache map[Conf]bool, grid [][]byte) bool {
+func inPath(from Conf, finalCost map[Conf]int, cache map[Conf]bool) bool {
 	var ok bool
 	var thisCost int
 	if v, ok := cache[from]; ok {
@@ -184,27 +188,19 @@ func inPath(from Conf, finalCost map[Conf]int, cache map[Conf]bool, grid [][]byt
 	if thisCost, ok = finalCost[from]; !ok {
 		return false
 	}
-	if grid[from.r][from.c] == 'E' {
-		cache[from] = true
-		return true
-	}
 	res := false
 	turnleft := Conf{r: from.r, c: from.c, dr: -from.dc, dc: from.dr}
 	turnright := Conf{r: from.r, c: from.c, dr: from.dc, dc: -from.dr}
 	forward := Conf{r: from.r + from.dr, c: from.c + from.dc, dr: from.dr, dc: from.dc}
-	if v, _ := finalCost[turnleft]; v == thisCost+1000 && inPath(turnleft, finalCost, cache, grid) {
+	if v, _ := finalCost[turnleft]; v == thisCost+1000 && inPath(turnleft, finalCost, cache) {
 		res = true
 	}
-	if v, _ := finalCost[turnright]; v == thisCost+1000 && inPath(turnright, finalCost, cache, grid) {
+	if v, _ := finalCost[turnright]; v == thisCost+1000 && inPath(turnright, finalCost, cache) {
 		res = true
 	}
-	if v, _ := finalCost[forward]; v == thisCost+1 && inPath(forward, finalCost, cache, grid) {
+	if v, _ := finalCost[forward]; v == thisCost+1 && inPath(forward, finalCost, cache) {
 		res = true
 	}
 	cache[from] = res
 	return res
-}
-
-func part2(grid [][]byte) int {
-	return 0
 }
