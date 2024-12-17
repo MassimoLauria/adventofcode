@@ -160,22 +160,20 @@ func canMove(grid Grid, r, c, dr, dc int, cache map[[2]int]bool) bool {
 	return ok
 }
 
-func doMove(grid Grid, r, c, dr, dc int, free map[[2]int]bool) {
-	v, ok := free[[2]int{r, c}]
-	if !ok || !v {
-		return
-	}
+// Move a (guaranteed to be movable) object on the grid
+// first moves the object needed to make room for it
+func doMove(grid Grid, r, c, dr, dc int) {
 	switch {
 	case grid[r][c] == '.':
 	case grid[r][c] == 'O' || grid[r][c] == '@' || dc != 0:
-		doMove(grid, r+dr, c+dc, dr, dc, free)
+		doMove(grid, r+dr, c+dc, dr, dc)
 		grid[r+dr][c+dc] = grid[r][c]
 		grid[r][c] = '.'
 	case grid[r][c] == ']':
-		doMove(grid, r, c-1, dr, dc, free)
+		doMove(grid, r, c-1, dr, dc)
 	default: // vertical box movement from [
-		doMove(grid, r+dr, c+dc, dr, dc, free)
-		doMove(grid, r+dr, c+dc+1, dr, dc, free)
+		doMove(grid, r+dr, c+dc, dr, dc)
+		doMove(grid, r+dr, c+dc+1, dr, dc)
 		grid[r+dr][c+dc] = '['
 		grid[r+dr][c+dc+1] = ']'
 		grid[r][c] = '.'
@@ -211,10 +209,9 @@ func part2(grid Grid, moves [][2]int) int {
 	rr, rc := N/2-1, N-2
 	for _, dir := range moves {
 		dr, dc := dir[0], dir[1]
-		free := make(map[[2]int]bool)
-		canMove(grid, rr, rc, dr, dc, free)
-		doMove(grid, rr, rc, dr, dc, free)
-		if grid[rr][rc] != '@' {
+		cache := make(map[[2]int]bool)
+		if canMove(grid, rr, rc, dr, dc, cache) {
+			doMove(grid, rr, rc, dr, dc)
 			rr += dr
 			rc += dc
 		}
