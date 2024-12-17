@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -34,11 +33,6 @@ func getAllNumbers(data string) []int {
 }
 
 func main() {
-	// part1(getAllNumbers("0 0 9  2 6"))
-	// part1(getAllNumbers("10 0 0 5,0,5,1,5,4"))
-	// part1(getAllNumbers("2024 0 0 0,1,5,4,3,0"))
-	// part1(getAllNumbers("0 29 0  1 7"))
-	// part1(getAllNumbers("0 2024 43690  4 0"))
 	example := getAllNumbers(example)
 	clock := time.Now()
 	data, err := ioutil.ReadFile("input17.txt")
@@ -51,8 +45,6 @@ func main() {
 	fmt.Printf("Part1 - example   : %-25s - %s\n", part1(example), time.Since(clock))
 	clock = time.Now()
 	fmt.Printf("Part1 - challenge : %-25s - %s\n", part1(challenge), time.Since(clock))
-	clock = time.Now()
-	fmt.Printf("Part2 - example   : %-25d - %s\n", part2(example), time.Since(clock))
 	clock = time.Now()
 	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(challenge), time.Since(clock))
 }
@@ -68,7 +60,10 @@ const (
 	CDV
 )
 
-func run(A, B, C int, prg []int) []int {
+func run(m *Machine, prg []int) {
+	A := m.A
+	B := m.B
+	C := m.C
 	ip := 0
 	var output []int
 	combo := func(ip int) int {
@@ -90,14 +85,11 @@ func run(A, B, C int, prg []int) []int {
 	for ip < len(prg) {
 		switch prg[ip] {
 		case ADV:
-			tmp = 1 << combo(ip+1)
-			A = A / tmp
+			A = A >> combo(ip+1)
 		case BDV:
-			tmp = 1 << combo(ip+1)
-			B = A / tmp
+			B = A >> combo(ip+1)
 		case CDV:
-			tmp = 1 << combo(ip+1)
-			C = A / tmp
+			C = A >> combo(ip+1)
 		case JNZ:
 			if A != 0 {
 				ip = prg[ip+1]
@@ -117,37 +109,50 @@ func run(A, B, C int, prg []int) []int {
 		}
 		ip += 2
 	}
+	m.A, m.B, m.C = A, B, C
+	m.output = output
 	// fmt.Println("A", A, "B", B, "C", C, output)
-	return output
+}
+
+type Machine struct {
+	A, B, C int
+	output  []int
 }
 
 func part1(values []int) string {
-	A := values[0]
-	B := values[1]
-	C := values[2]
+	m := Machine{A: values[0], B: values[1], C: values[2]}
 	prg := values[3:]
-	output := run(A, B, C, prg)
+	run(&m, prg)
 	var soutput []string
-	for _, v := range output {
+	for _, v := range m.output {
 		soutput = append(soutput, strconv.Itoa(v))
 	}
 	return strings.Join(soutput, ",")
 }
 
-func part2(values []int) int {
-	var output []int
-	A := 0
-	prg := values[3:]
-	disassm(prg)
-	return 0
-	for {
-		output = run(A, 0, 0, prg)
-		if slices.Equal(prg, output) {
-			return A
+func solve(prefix int, prg []int, guessIdx int) (int, bool) {
+	m := Machine{}
+	for a := prefix * 8; a < prefix*8+8; a++ {
+		m.A = a
+		run(&m, prg[:12]) // do not output or jump (just read B register)
+		if m.B%8 == prg[guessIdx] {
+			if guessIdx == 0 {
+				return a, true
+			} else if v, ok := solve(a, prg, guessIdx-1); ok {
+				return v, ok
+			}
 		}
-		A += 1
 	}
-	return 0
+	return 0, false
+}
+
+func part2(values []int) int {
+	prg := values[3:]
+	v, ok := solve(0, prg, len(prg)-1)
+	if !ok {
+		return 0
+	}
+	return v
 }
 
 func disassm(prg []int) {
@@ -171,11 +176,11 @@ func disassm(prg []int) {
 		fmt.Printf("%2d:  ", ip)
 		switch prg[ip] {
 		case ADV:
-			fmt.Printf("A = A / 2^%s", combo(ip+1))
+			fmt.Printf("A = A >> %s", combo(ip+1))
 		case BDV:
-			fmt.Printf("B = A / 2^%s", combo(ip+1))
+			fmt.Printf("B = A >> %s", combo(ip+1))
 		case CDV:
-			fmt.Printf("C = A / 2^%s", combo(ip+1))
+			fmt.Printf("C = A >> %s", combo(ip+1))
 		case JNZ:
 			fmt.Printf("if A!= 0 goto %d", prg[ip+1])
 		case OUT:
@@ -183,7 +188,7 @@ func disassm(prg []int) {
 		case BXL:
 			fmt.Printf("B = B ^ %d", prg[ip+1])
 		case BXC:
-			fmt.Printf("B + B ^ C")
+			fmt.Printf("B = B ^ C")
 		case BST:
 			fmt.Printf("B = %s %% 8", combo(ip+1))
 		default:
