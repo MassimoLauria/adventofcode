@@ -1,10 +1,9 @@
-package main
+package aoc
 
 import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 )
 
 var UP = [2]int{-1, 0}
@@ -75,7 +74,7 @@ func AddBorderToGrid(grid [][]byte, fill byte) [][]byte {
 		return result
 	}
 	C := len(grid[0])
-	result := make([][]byte, 0, R+2)
+	result := make([][]byte, R+2)
 	line := make([]byte, C+2)
 	for i := range line {
 		line[i] = fill
@@ -85,43 +84,10 @@ func AddBorderToGrid(grid [][]byte, fill byte) [][]byte {
 	copy(result[0], line)
 	copy(result[R+1], line)
 	for i := range grid {
-		result[i+1] = make([]byte, len(grid[i])+1)
+		result[i+1] = make([]byte, len(grid[i])+2)
 		copy(result[i+1][1:len(grid[i])+1], grid[i])
 		result[i+1][0] = fill
-		result[i+1][C+2] = fill
+		result[i+1][len(grid[i])+1] = fill
 	}
 	return result
-}
-
-func main() {
-	example := `
-###############
-#.......#....E#
-#.#.###.#.###.#
-#.....#.#...#.#
-#.###.#####.#.#
-#.#.#.......#.#
-#.#.#####.###.#
-#...........#.#
-###.#.#####.#.#
-#...#.....#.#.#
-#.#.#.###.#.#.#
-#.....#...#.#.#
-#.###.#.#.#.#.#
-#S..#.....#...#
-###############
-`
-	fmt.Println(FourWays)
-	grid := GridFromString(example)
-	PrintGrid(grid)
-	grid, err := GridFromFile("input16.txt")
-	if err != nil {
-		log.Fatal("Can't read file")
-	}
-	grid = GridFromString("X")
-	pattern := "0123456789"
-	for i := range pattern {
-		grid = AddBorderToGrid(grid, pattern[i])
-		PrintGrid(grid)
-	}
 }

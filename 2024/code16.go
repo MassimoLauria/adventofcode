@@ -5,11 +5,8 @@
 package main
 
 import (
-	"bytes"
-	"container/heap"
+	"aoc2024/aoc"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"time"
 )
 
@@ -51,16 +48,12 @@ const example2 = `
 `
 
 func main() {
-	example1 := processText([]byte(example1))
-	example2 := processText([]byte(example2))
+	example1 := aoc.GridFromString(example1)
+	example2 := aoc.GridFromString(example2)
 	clock := time.Now()
-	data, err := ioutil.ReadFile("input16.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	challenge := processText(data)
+	challenge, _ := aoc.GridFromFile("input16.txt")
 	d := time.Since(clock)
-	fmt.Printf("Load time                                     - %s\n", time.Since(clock))
+	fmt.Printf("Load time                                      - %s\n", time.Since(clock))
 
 	var p1, p2 int
 
@@ -81,62 +74,54 @@ func main() {
 	fmt.Printf("Part2 - challenge  : %-25d - %s\n", p2, d)
 }
 
-func processText(data []byte) [][]byte {
-	data = bytes.TrimSpace(data)
-	return bytes.Split(data, []byte("\n"))
-}
-
 type Conf struct {
-	r, c   int
-	dr, dc int
+	r, c int
+	dir  [2]int
 }
 
-// Priority Queue (sort of)
-
-type ConfQueueItem struct {
-	conf Conf
-	cost int
-}
-
-type PQueue []ConfQueueItem
-
-func (h PQueue) Len() int           { return len(h) }
-func (h PQueue) Less(i, j int) bool { return h[i].cost < h[j].cost }
-func (h PQueue) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *PQueue) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*h = append(*h, x.(ConfQueueItem))
-}
-
-func (h *PQueue) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
+func inPath(from Conf, finalCost map[Conf]int, cache map[Conf]bool) bool {
+	var ok bool
+	var thisCost int
+	if v, ok := cache[from]; ok {
+		return v
+	}
+	if thisCost, ok = finalCost[from]; !ok {
+		return false
+	}
+	res := false
+	turnleft := Conf{r: from.r, c: from.c, dir: aoc.RoL90(from.dir)}
+	turnright := Conf{r: from.r, c: from.c, dir: aoc.RoR90(from.dir)}
+	forward := Conf{r: from.r + from.dir[0], c: from.c + from.dir[1],
+		dir: from.dir}
+	if v, _ := finalCost[turnleft]; v == thisCost+1000 && inPath(turnleft, finalCost, cache) {
+		res = true
+	}
+	if v, _ := finalCost[turnright]; v == thisCost+1000 && inPath(turnright, finalCost, cache) {
+		res = true
+	}
+	if v, _ := finalCost[forward]; v == thisCost+1 && inPath(forward, finalCost, cache) {
+		res = true
+	}
+	cache[from] = res
+	return res
 }
 
 func part12(grid [][]byte) (int, int) {
 	N := len(grid)
+	Q := aoc.NewMinHeap[Conf]()
 	var cf Conf
 	var dist int
 
 	// initial conf
-	start := Conf{r: N - 2, c: 1,
-		dr: 0, dc: 1} // facing EAST, i.e. {0,+1}
-	queue := &PQueue{}
-	heap.Push(queue, ConfQueueItem{conf: start, cost: 0})
-	var top ConfQueueItem
+	start := Conf{r: N - 2, c: 1, dir: aoc.RIGHT} // facing EAST, i.e. {0,+1}
+	Q.Improve(start, 0)
 	finalCost := make(map[Conf]int)
 	useful := make(map[Conf]bool)
 	reached := false
 	var minCost int
 	// start exploration
-	for queue.Len() > 0 {
-		top = heap.Pop(queue).(ConfQueueItem)
-		cf, dist = top.conf, top.cost
+	for Q.Len() > 0 {
+		cf, dist = Q.Pop()
 		if reached && dist > minCost {
 			continue
 		}
@@ -153,18 +138,19 @@ func part12(grid [][]byte) (int, int) {
 			continue
 		}
 		//
-		turnleft := Conf{r: cf.r, c: cf.c, dr: -cf.dc, dc: cf.dr}
+		turnleft := Conf{r: cf.r, c: cf.c, dir: aoc.RoL90(cf.dir)}
 		if _, ok := finalCost[turnleft]; !ok {
-			heap.Push(queue, ConfQueueItem{conf: turnleft, cost: dist + 1000})
+			Q.Improve(turnleft, dist+1000)
 		}
-		turnright := Conf{r: cf.r, c: cf.c, dr: cf.dc, dc: -cf.dr}
+		turnright := Conf{r: cf.r, c: cf.c, dir: aoc.RoR90(cf.dir)}
 		if _, ok := finalCost[turnright]; !ok {
-			heap.Push(queue, ConfQueueItem{conf: turnright, cost: dist + 1000})
+			Q.Improve(turnright, dist+1000)
 		}
-		forward := Conf{r: cf.r + cf.dr, c: cf.c + cf.dc, dr: cf.dr, dc: cf.dc}
+		forward := Conf{r: cf.r + cf.dir[0], c: cf.c + cf.dir[1],
+			dir: cf.dir}
 		if grid[forward.r][forward.c] != '#' {
 			if _, ok := finalCost[forward]; !ok {
-				heap.Push(queue, ConfQueueItem{conf: forward, cost: dist + 1})
+				Q.Improve(forward, dist+1)
 			}
 		}
 	}
@@ -177,30 +163,4 @@ func part12(grid [][]byte) (int, int) {
 	}
 
 	return minCost, len(tiles)
-}
-
-func inPath(from Conf, finalCost map[Conf]int, cache map[Conf]bool) bool {
-	var ok bool
-	var thisCost int
-	if v, ok := cache[from]; ok {
-		return v
-	}
-	if thisCost, ok = finalCost[from]; !ok {
-		return false
-	}
-	res := false
-	turnleft := Conf{r: from.r, c: from.c, dr: -from.dc, dc: from.dr}
-	turnright := Conf{r: from.r, c: from.c, dr: from.dc, dc: -from.dr}
-	forward := Conf{r: from.r + from.dr, c: from.c + from.dc, dr: from.dr, dc: from.dc}
-	if v, _ := finalCost[turnleft]; v == thisCost+1000 && inPath(turnleft, finalCost, cache) {
-		res = true
-	}
-	if v, _ := finalCost[turnright]; v == thisCost+1000 && inPath(turnright, finalCost, cache) {
-		res = true
-	}
-	if v, _ := finalCost[forward]; v == thisCost+1 && inPath(forward, finalCost, cache) {
-		res = true
-	}
-	cache[from] = res
-	return res
 }
