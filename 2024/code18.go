@@ -63,17 +63,14 @@ func part1(values []int, B int, N int) int {
 	start := [2]int{1, 1}  // adding border offset
 	target := [2]int{N, N} // adding border offset
 
+	// Dijkstra
 	Q := aoc.NewMinHeap[[2]int]()
-	// initial conf
 	Q.Improve(start, 0)
 	var pos, newpos [2]int
 	var dist int
-	// start exploration
 	for Q.Len() > 0 {
 		pos, dist = Q.Pop()
-		// fmt.Println("Popping", pos, dist)
-		// Q.Print()
-		G[pos[0]][pos[1]] = byte(dist%10) + '0'
+		G[pos[0]][pos[1]] = 'O'
 		// found the target
 		if pos == target {
 			return dist
@@ -81,9 +78,7 @@ func part1(values []int, B int, N int) int {
 		for _, dir := range aoc.FourWays {
 			newpos = [2]int{pos[0] + dir[0], pos[1] + dir[1]}
 			if G[newpos[0]][newpos[1]] == '.' {
-				// fmt.Println("Pushing")
 				Q.Improve(newpos, dist+1)
-				// Q.Print()
 			}
 		}
 	}
