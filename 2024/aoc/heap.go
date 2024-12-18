@@ -1,5 +1,7 @@
 package aoc
 
+import "fmt"
+
 type MinHeap[T comparable] struct {
 	data  []T
 	cost  []int
@@ -31,7 +33,7 @@ func (q *MinHeap[T]) Swap(i, j int) {
 
 func (q *MinHeap[T]) updateUp(idx int) {
 	pidx := (idx - 1) / 2
-	for idx > 0 && q.cost[pidx] < q.cost[idx] {
+	for idx > 0 && q.cost[pidx] > q.cost[idx] {
 		q.Swap(pidx, idx)
 		idx = pidx
 		pidx = (idx - 1) / 2
@@ -89,4 +91,15 @@ func (q *MinHeap[T]) Improve(value T, cost int) {
 		idx = len(q.data) - 1
 	}
 	q.updateUp(idx)
+}
+
+func (q *MinHeap[T]) Print() {
+	fmt.Println("Len:", q.Len())
+	for i := range q.data {
+		fmt.Printf("(%v,%d) ", q.data[i], q.cost[i])
+		if i%20 == 19 {
+			fmt.Println()
+		}
+	}
+	fmt.Println()
 }
