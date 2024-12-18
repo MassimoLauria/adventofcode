@@ -91,3 +91,14 @@ func AddBorderToGrid(grid [][]byte, fill byte) [][]byte {
 	}
 	return result
 }
+
+func MakeGrid(R, C int, fill byte) [][]byte {
+	G := make([][]byte, R)
+	for i := range G {
+		G[i] = make([]byte, C)
+		for j := range G[i] {
+			G[i][j] = fill
+		}
+	}
+	return G
+}
