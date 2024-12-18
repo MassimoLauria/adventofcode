@@ -54,7 +54,7 @@ func main() {
 	fmt.Printf("Part2 - challenge : %-25s - %s\n", part2(challenge, 71), time.Since(clock))
 }
 
-func part1broken(values []int, B int, N int) int {
+func part1(values []int, B int, N int) int {
 	G := aoc.MakeGrid(N, N, '.')
 	for i := 0; i < 2*B; i += 2 {
 		G[values[i+1]][values[i]] = '#'
@@ -71,57 +71,21 @@ func part1broken(values []int, B int, N int) int {
 	// start exploration
 	for Q.Len() > 0 {
 		pos, dist = Q.Pop()
+		// fmt.Println("Popping", pos, dist)
+		// Q.Print()
 		G[pos[0]][pos[1]] = byte(dist%10) + '0'
 		// found the target
 		if pos == target {
-			aoc.PrintGrid(G)
 			return dist
 		}
 		for _, dir := range aoc.FourWays {
 			newpos = [2]int{pos[0] + dir[0], pos[1] + dir[1]}
 			if G[newpos[0]][newpos[1]] == '.' {
+				// fmt.Println("Pushing")
 				Q.Improve(newpos, dist+1)
+				// Q.Print()
 			}
 		}
-	}
-	aoc.PrintGrid(G)
-	return dist
-}
-
-func part1(values []int, B int, N int) int {
-	G := aoc.MakeGrid(N, N, '.')
-	for i := 0; i < 2*B; i += 2 {
-		G[values[i+1]][values[i]] = '#'
-	}
-	G = aoc.AddBorderToGrid(G, '#')
-	start := [2]int{1, 1}  // adding border offset
-	target := [2]int{N, N} // adding border offset
-
-	Q := make([][2]int, 0, 10000)
-	// initial conf
-	finalcost := make(map[[2]int]int)
-	finalcost[start] = 0
-	Q = append(Q, start)
-	qidx := 0
-	// start exploration
-	var pos, newpos [2]int
-	var dist int
-	for qidx < len(Q) {
-		pos = Q[qidx]
-		dist = finalcost[pos]
-		// found the target
-		if pos == target {
-			return finalcost[target]
-		}
-		for _, dir := range aoc.FourWays {
-			newpos = [2]int{pos[0] + dir[0], pos[1] + dir[1]}
-			_, ok := finalcost[newpos]
-			if G[newpos[0]][newpos[1]] != '#' && !ok {
-				Q = append(Q, newpos)
-				finalcost[newpos] = dist + 1
-			}
-		}
-		qidx++
 	}
 	return -1
 }
