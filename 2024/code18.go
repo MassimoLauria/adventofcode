@@ -49,9 +49,9 @@ func main() {
 	clock = time.Now()
 	fmt.Printf("Part1 - challenge : %-25d - %s\n", part1(challenge, 1024, 71), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - example   : %-25s - %s\n", part2(example, 7), time.Since(clock))
+	fmt.Printf("Part2 - example   : %-25s - %s\n", part2(example, 12, 7), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - challenge : %-25s - %s\n", part2(challenge, 71), time.Since(clock))
+	fmt.Printf("Part2 - challenge : %-25s - %s\n", part2(challenge, 1024, 71), time.Since(clock))
 }
 
 func part1(values []int, B int, N int) int {
@@ -85,8 +85,7 @@ func part1(values []int, B int, N int) int {
 	return -1
 }
 
-func part2(values []int, N int) string {
-	start := 0
+func part2(values []int, start, N int) string {
 	end := len(values) / 2
 	var mid int
 	for start+1 < end {
