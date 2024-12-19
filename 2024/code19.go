@@ -52,26 +52,29 @@ func processText(data string) ([]string, []string) {
 	return strings.Split(lines[0], ", "), lines[2:]
 }
 
-func designPossible(text string, towels []string, cache map[string]int) int {
-	if len(text) == 0 {
-		return 1
-	}
-	if v, ok := cache[text]; ok {
-		return v
-	}
-	for _, t := range towels {
-		if strings.HasPrefix(text, t) {
-			cache[text] += designPossible(text[len(t):], towels, cache)
+func designPossible(text string, towels []string, buffer []int) int {
+	n := len(text)
+	buffer[0] = 1
+	for i := 1; i <= len(text); i++ {
+		buffer[i] = 0
+		for _, t := range towels {
+			if strings.HasPrefix(text[n-i:], t) {
+				buffer[i] += buffer[i-len(t)]
+			}
 		}
 	}
-	return cache[text]
+	return buffer[n]
 }
 
 func part1(towels []string, patterns []string) int {
-	cache := make(map[string]int)
 	count := 0
+	maxlength := 0
+	for _, s := range patterns {
+		maxlength = max(maxlength, len(s))
+	}
+	buffer := make([]int, maxlength+1)
 	for _, p := range patterns {
-		if designPossible(p, towels, cache) > 0 {
+		if designPossible(p, towels, buffer) > 0 {
 			count++
 		}
 	}
@@ -79,10 +82,14 @@ func part1(towels []string, patterns []string) int {
 }
 
 func part2(towels []string, patterns []string) int {
-	cache := make(map[string]int)
 	count := 0
+	maxlength := 0
+	for _, s := range patterns {
+		maxlength = max(maxlength, len(s))
+	}
+	buffer := make([]int, maxlength+1)
 	for _, p := range patterns {
-		count += designPossible(p, towels, cache)
+		count += designPossible(p, towels, buffer)
 	}
 	return count
 }
