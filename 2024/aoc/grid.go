@@ -102,3 +102,20 @@ func MakeGrid(R, C int, fill byte) [][]byte {
 	}
 	return G
 }
+
+func DepictDist(grid [][]byte, distance map[[2]int]int) {
+	Ngrid := MakeGrid(len(grid), len(grid[0]), '.')
+	var pos [2]int
+	for r := range grid {
+		for c := range grid[r] {
+			pos = [2]int{r, c}
+			d, ok := distance[pos]
+			if grid[r][c] == '.' && ok {
+				Ngrid[r][c] = '0' + byte(d%10)
+			} else {
+				Ngrid[r][c] = grid[r][c]
+			}
+		}
+	}
+	PrintGrid(Ngrid)
+}
