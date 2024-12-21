@@ -43,13 +43,13 @@ func main() {
 	example := processText([]byte(example))
 	challenge := processText([]byte(challenge))
 	clock := time.Now()
-	fmt.Printf("Part1 - example   : %-25d - %s\n", part1(example), time.Since(clock))
+	fmt.Printf("Part1 - example   : %-25d - %s\n", part12(example, 3), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part1 - challenge : %-25d - %s\n", part1(challenge), time.Since(clock))
-	// clock = time.Now()
-	// fmt.Printf("Part2 - example   : %-25d - %s\n", part2(example), time.Since(clock))
+	fmt.Printf("Part1 - challenge : %-25d - %s\n", part12(challenge, 3), time.Since(clock))
 	clock = time.Now()
-	fmt.Printf("Part2 - challenge : %-25d - %s\n", part2(challenge), time.Since(clock))
+	fmt.Printf("Part2 - example   : %-25d - %s\n", part12(example, 26), time.Since(clock))
+	clock = time.Now()
+	fmt.Printf("Part2 - challenge : %-25d - %s\n", part12(challenge, 26), time.Since(clock))
 }
 
 func processText(data []byte) [][]byte {
@@ -75,37 +75,28 @@ func recurseCode(r, c int, code []byte, T int) int {
 	if ok {
 		return shortest
 	}
-	var j, lr, lc int
-	var rch, cch byte
 	var lenHV, lenVH int
 	b := code[0]
 	dr, dc := keymap[b][0]-r, keymap[b][1]-c
 	tr, tc := keymap[b][0], keymap[b][1]
+	var vmove, hmove []byte
 	if dr >= 0 {
-		rch = 'v'
-		lr = dr
+		vmove = bytes.Repeat([]byte{'v'}, dr)
 	} else {
-		rch = '^'
-		lr = -dr
+		vmove = bytes.Repeat([]byte{'^'}, -dr)
 	}
 	if dc >= 0 {
-		cch = '>'
-		lc = dc
+		hmove = bytes.Repeat([]byte{'>'}, dc)
 	} else {
-		cch = '<'
-		lc = -dc
+		hmove = bytes.Repeat([]byte{'<'}, -dc)
 	}
 	// horiz vert
 	if r == 0 && c+dc == -2 { // cannot move here
 		lenHV = math.MaxInt
 	} else {
 		optionHV := make([]byte, 0)
-		for j = 0; j < lc; j++ {
-			optionHV = append(optionHV, cch)
-		}
-		for j = 0; j < lr; j++ {
-			optionHV = append(optionHV, rch)
-		}
+		optionHV = append(optionHV, hmove...)
+		optionHV = append(optionHV, vmove...)
 		optionHV = append(optionHV, 'A')
 		lenHV = recurseCode(0, 0, optionHV, T-1)
 	}
@@ -115,12 +106,8 @@ func recurseCode(r, c int, code []byte, T int) int {
 		lenVH = math.MaxInt
 	} else {
 		optionVH := make([]byte, 0)
-		for j = 0; j < lr; j++ {
-			optionVH = append(optionVH, rch)
-		}
-		for j = 0; j < lc; j++ {
-			optionVH = append(optionVH, cch)
-		}
+		optionVH = append(optionVH, vmove...)
+		optionVH = append(optionVH, hmove...)
 		optionVH = append(optionVH, 'A')
 		lenVH = recurseCode(0, 0, optionVH, T-1)
 	}
@@ -130,21 +117,8 @@ func recurseCode(r, c int, code []byte, T int) int {
 	return result
 }
 
-func part1(codes [][]byte) int {
+func part12(codes [][]byte, ITER int) int {
 	total := 0
-	ITER := 3
-	var v, l int
-	for _, code := range codes {
-		v, _ = strconv.Atoi(string(code[:3]))
-		l = recurseCode(0, 0, code, ITER)
-		total += v * l
-	}
-	return total
-}
-
-func part2(codes [][]byte) int {
-	total := 0
-	ITER := 26
 	var v, l int
 	for _, code := range codes {
 		v, _ = strconv.Atoi(string(code[:3]))
