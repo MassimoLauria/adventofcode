@@ -59,60 +59,62 @@ func processText(data []byte) [][]byte {
 }
 
 type Call struct {
-	r, c int
 	code string
 	T    int
 }
 
 var CACHE = make(map[Call]int)
 
-func recurseCode(r, c int, code []byte, T int) int {
+func minSequence(code []byte, T int) int {
+	// base case
 	if T <= 0 || len(code) == 0 {
 		return len(code)
 	}
-	call := Call{r: r, c: c, code: string(code), T: T}
-	shortest, ok := CACHE[call]
-	if ok {
+	// cached result
+	call := Call{code: string(code), T: T}
+	if shortest, ok := CACHE[call]; ok {
 		return shortest
 	}
+
 	var lenHV, lenVH int
-	b := code[0]
-	dr, dc := keymap[b][0]-r, keymap[b][1]-c
-	tr, tc := keymap[b][0], keymap[b][1]
 	var vmove, hmove []byte
-	if dr >= 0 {
-		vmove = bytes.Repeat([]byte{'v'}, dr)
-	} else {
-		vmove = bytes.Repeat([]byte{'^'}, -dr)
+	result := 0
+	r, c := 0, 0
+	for _, b := range code {
+		dr, dc := keymap[b][0]-r, keymap[b][1]-c
+		if dr >= 0 {
+			vmove = bytes.Repeat([]byte{'v'}, dr)
+		} else {
+			vmove = bytes.Repeat([]byte{'^'}, -dr)
+		}
+		if dc >= 0 {
+			hmove = bytes.Repeat([]byte{'>'}, dc)
+		} else {
+			hmove = bytes.Repeat([]byte{'<'}, -dc)
+		}
+		// horiz vert
+		if r == 0 && c+dc == -2 { // cannot move here
+			lenHV = math.MaxInt
+		} else {
+			optionHV := make([]byte, 0)
+			optionHV = append(optionHV, hmove...)
+			optionHV = append(optionHV, vmove...)
+			optionHV = append(optionHV, 'A')
+			lenHV = minSequence(optionHV, T-1)
+		}
+		// vert horiz
+		if r+dr == 0 && c == -2 { // cannot move here
+			lenVH = math.MaxInt
+		} else {
+			optionVH := make([]byte, 0)
+			optionVH = append(optionVH, vmove...)
+			optionVH = append(optionVH, hmove...)
+			optionVH = append(optionVH, 'A')
+			lenVH = minSequence(optionVH, T-1)
+		}
+		result += min(lenHV, lenVH)
+		r, c = r+dr, c+dc
 	}
-	if dc >= 0 {
-		hmove = bytes.Repeat([]byte{'>'}, dc)
-	} else {
-		hmove = bytes.Repeat([]byte{'<'}, -dc)
-	}
-	// horiz vert
-	if r == 0 && c+dc == -2 { // cannot move here
-		lenHV = math.MaxInt
-	} else {
-		optionHV := make([]byte, 0)
-		optionHV = append(optionHV, hmove...)
-		optionHV = append(optionHV, vmove...)
-		optionHV = append(optionHV, 'A')
-		lenHV = recurseCode(0, 0, optionHV, T-1)
-	}
-
-	// vert horiz
-	if r+dr == 0 && c == -2 { // cannot move here
-		lenVH = math.MaxInt
-	} else {
-		optionVH := make([]byte, 0)
-		optionVH = append(optionVH, vmove...)
-		optionVH = append(optionVH, hmove...)
-		optionVH = append(optionVH, 'A')
-		lenVH = recurseCode(0, 0, optionVH, T-1)
-	}
-
-	result := min(lenHV, lenVH) + recurseCode(tr, tc, code[1:], T)
 	CACHE[call] = result
 	return result
 }
@@ -122,7 +124,7 @@ func part12(codes [][]byte, ITER int) int {
 	var v, l int
 	for _, code := range codes {
 		v, _ = strconv.Atoi(string(code[:3]))
-		l = recurseCode(0, 0, code, ITER)
+		l = minSequence(code, ITER)
 		total += v * l
 	}
 	return total
