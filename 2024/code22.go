@@ -10,12 +10,14 @@ import (
 	"time"
 )
 
-const example = `1
+const example = `
+1
 10
 100
 2024
 `
-const example2 = `1
+const example2 = `
+1
 2
 3
 2024
@@ -51,9 +53,9 @@ func part1(values []int) int {
 	return total
 }
 
-func sequence(n, length int) []int {
+func fillSequence(n int, digits []int) {
 	mask := (1 << 24) - 1
-	digits := make([]int, length)
+	length := len(digits)
 	var o int
 	for i := 0; i < length; i++ {
 		o = n
@@ -62,32 +64,31 @@ func sequence(n, length int) []int {
 		n = (n ^ (n << 11)) & mask
 		digits[i] = n%10 - o%10
 	}
-	return digits
 }
 
-func gains(n int, diffs []int) map[[4]int]int {
+func gains(n int, diffs []int) map[int]int {
 	lastdigit := n%10 + diffs[0] + diffs[1] + diffs[2]
-	gains := make(map[[4]int]int)
-	var pattern [4]int
+	gains := make(map[int]int)
+	var packed = (10+diffs[0])<<10 + (10+diffs[1])<<5 + (10 + diffs[2])
+	var mask = (1 << 20) - 1
 	for i := 3; i < len(diffs); i++ {
 		lastdigit += diffs[i]
-		pattern[0] = diffs[i-3]
-		pattern[1] = diffs[i-2]
-		pattern[2] = diffs[i-1]
-		pattern[3] = diffs[i]
-		_, ok := gains[pattern]
+		packed = (packed<<5 + (10 + diffs[i])) & mask
+		_, ok := gains[packed]
 		if !ok {
-			gains[pattern] = lastdigit
+			gains[packed] = lastdigit
 		}
 	}
 	return gains
 }
 
 func part2(values []int) int {
-	global := make(map[[4]int]int)
+
+	global := make(map[int]int)
+	buffer := make([]int, 2000)
 	for _, n := range values {
-		s := sequence(n, 2000)
-		g := gains(n, s)
+		fillSequence(n, buffer)
+		g := gains(n, buffer)
 		for p, v := range g {
 			global[p] += v
 		}
