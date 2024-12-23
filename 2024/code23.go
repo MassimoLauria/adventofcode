@@ -110,7 +110,7 @@ func part1(G Graph) int {
 					case ijs[i][0] == 't' || ijs[j][0] == 't':
 						triangles += 3 // we are counting it 2 times
 					default:
-						triangles += 6 // we are counting it 2 times
+						triangles += 6 // we are counting it 1 time
 					}
 				}
 			}
@@ -119,16 +119,48 @@ func part1(G Graph) int {
 	return triangles / 6
 }
 
-func MaxClique(V []string, E Graph) []string {
-	return V[:10]
+func largestClique(V []string, E Graph, atLeast int) []string {
+	if len(V) < atLeast {
+		return nil
+	}
+	if len(V) == 1 {
+		return V
+	}
+	var K []string
+	var tmp []string
+	neig := make([]string, 0, len(V))
+	for i := range V {
+		neig = neig[:0]
+		for j := i + 1; j < len(V); j++ {
+			if E[V[i]][V[j]] {
+				neig = append(neig, V[j])
+			}
+		}
+		if tmp = largestClique(neig, E, atLeast-1); tmp != nil {
+			K = tmp
+			K = append(K, V[i])
+			atLeast = len(K) + 1
+		}
+	}
+	return K
 }
 
-func part2(G Graph) string {
-	V := make([]string, 0, len(G))
-	for v, _ := range G {
-		V = append(V, v)
+func part2(E Graph) string {
+	var K []string
+	var tmp []string
+
+	for v, adj := range E {
+		neig := make([]string, len(adj))
+		j := 0
+		for w, _ := range adj {
+			neig[j] = w
+			j++
+		}
+		if tmp = largestClique(neig, E, len(K)); tmp != nil {
+			K = tmp
+			K = append(K, v)
+		}
 	}
-	K := MaxClique(V, G)
 	slices.Sort(K)
 	return strings.Join(K, ",")
 }
