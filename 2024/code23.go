@@ -130,6 +130,10 @@ func largestClique(V []string, E Graph, atLeast int) []string {
 	var tmp []string
 	neig := make([]string, 0, len(V))
 	for i := range V {
+		// use V[0] as pivot (no need to recurse on pivot's neighbors)
+		if E[V[i]][V[0]] {
+			continue
+		}
 		neig = neig[:0]
 		for j := i + 1; j < len(V); j++ {
 			if E[V[i]][V[j]] {
