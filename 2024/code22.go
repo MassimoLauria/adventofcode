@@ -53,48 +53,38 @@ func part1(values []int) int {
 	return total
 }
 
-func fillSequence(n int, digits []int) {
-	mask := (1 << 24) - 1
-	length := len(digits)
-	var o int
-	for i := 0; i < length; i++ {
-		o = n
-		n = (n ^ (n << 6)) & mask
-		n = (n ^ (n >> 5)) & mask
-		n = (n ^ (n << 11)) & mask
-		digits[i] = n%10 - o%10
-	}
-}
-
-func gains(n int, diffs []int) map[int]int {
-	lastdigit := n%10 + diffs[0] + diffs[1] + diffs[2]
-	gains := make(map[int]int)
-	var packed = (10+diffs[0])<<10 + (10+diffs[1])<<5 + (10 + diffs[2])
-	var mask = (1 << 20) - 1
-	for i := 3; i < len(diffs); i++ {
-		lastdigit += diffs[i]
-		packed = (packed<<5 + (10 + diffs[i])) & mask
-		_, ok := gains[packed]
-		if !ok {
-			gains[packed] = lastdigit
-		}
-	}
-	return gains
-}
-
 func part2(values []int) int {
 
-	global := make(map[int]int)
-	buffer := make([]int, 2000)
-	for _, n := range values {
-		fillSequence(n, buffer)
-		g := gains(n, buffer)
-		for p, v := range g {
-			global[p] += v
+	touched := make([]int, 1<<20)
+	gains := make([]int, 1<<20)
+	var packed, o int
+	var mask = (1 << 20) - 1
+	var bitmask = (1 << 24) - 1
+	var lastdigit int
+	var diff int
+	for s, n := range values {
+		lastdigit = n % 10
+		diff = 0
+		packed = 0
+		for i := 0; i < 2000; i++ {
+			o = n
+			n = (n ^ (n << 6)) & bitmask
+			n = (n ^ (n >> 5)) & bitmask
+			n = (n ^ (n << 11)) & bitmask
+			lastdigit = n % 10
+			diff = n%10 - o%10
+			packed = (packed<<5 + (10 + diff)) & mask
+			if i < 3 {
+				continue
+			}
+			if touched[packed] <= s {
+				touched[packed] = s + 1
+				gains[packed] += lastdigit
+			}
 		}
 	}
 	maxvalue := 0
-	for _, v := range global {
+	for _, v := range gains {
 		maxvalue = max(maxvalue, v)
 	}
 	return maxvalue
