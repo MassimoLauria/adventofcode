@@ -77,7 +77,8 @@ func main() {
 	fmt.Printf("Part1 - example   : %-25d - %s\n", part1(example), time.Since(clock))
 	clock = time.Now()
 	fmt.Printf("Part1 - challenge : %-25d - %s\n", part1(challenge), time.Since(clock))
-	fmt.Printf("Part2 - challenge : %-25s - N/A\n", part2(challenge))
+	clock = time.Now()
+	fmt.Printf("Part2 - challenge : %-25s - %s\n", part2(challenge), time.Since(clock))
 }
 
 type Circuit struct {
@@ -196,25 +197,25 @@ func part2(C Circuit) string {
 		g2 := swaplist[s+1]
 		C.gates[g1], C.gates[g2] = C.gates[g2], C.gates[g1]
 	}
-	n := 0
-	for g, _ := range C.values {
-		if g[0] == 'x' {
-			n += 1
-		}
-	}
-	for i := 2; i < n-1; i++ {
-		for x := 0; x < 4; x++ {
-			for y := 0; y < 4; y++ {
-				vx, vy := x<<i, y<<i
-				if eval(C, vx, vy) != (vx + vy) {
-					fmt.Printf("Error %012X %012X diff: %012X\n", vx, vy, eval(C, vx, vy)^(vx+vy))
-					fmt.Printf("  -expected: %012X\n", vx+vy)
-					fmt.Printf("  -instead : %012X\n", eval(C, vx, vy))
-					return ""
-				}
-			}
-		}
-	}
+	// n := 0
+	// for g, _ := range C.values {
+	// 	if g[0] == 'x' {
+	// 		n += 1
+	// 	}
+	// }
+	// for i := 2; i < n-1; i++ {
+	// 	for x := 0; x < 4; x++ {
+	// 		for y := 0; y < 4; y++ {
+	// 			vx, vy := x<<i, y<<i
+	// 			if eval(C, vx, vy) != (vx + vy) {
+	// 				fmt.Printf("Error %012X %012X diff: %012X\n", vx, vy, eval(C, vx, vy)^(vx+vy))
+	// 				fmt.Printf("  -expected: %012X\n", vx+vy)
+	// 				fmt.Printf("  -instead : %012X\n", eval(C, vx, vy))
+	// 				return ""
+	// 			}
+	// 		}
+	// 	}
+	// }
 	slices.Sort(swaplist)
 	return strings.Join(swaplist, ",")
 }
