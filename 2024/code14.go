@@ -109,38 +109,6 @@ func printPositions(X, Y []int) {
 	fmt.Println()
 }
 
-func heuristic(X, Y []int) bool {
-	N := len(X)
-	var i int
-	var pos [2]int
-	positions := make(map[[2]int]int)
-	for i = 0; i < N; i++ {
-		positions[[2]int{X[i], Y[i]}] += 1
-	}
-	for i = 0; i < N; i++ {
-		// check pattern
-		//   #
-		//  ###
-		// #####
-		found := true
-	FindLoop:
-		for r := 0; r < 3; r++ {
-			for c := -r; c <= r; c++ {
-				pos = [2]int{X[i] + c, Y[i] + r}
-				_, ok := positions[pos]
-				found = found && ok
-				if !found {
-					break FindLoop
-				}
-			}
-		}
-		if found {
-			return true
-		}
-	}
-	return false
-}
-
 func part2(values []int, W, H int) int {
 	// Normalize
 	N := len(values) / 4
@@ -152,14 +120,26 @@ func part2(values []int, W, H int) int {
 		dx[i/4] = (values[i+2] + W) % W
 		dy[i/4] = (values[i+3] + H) % H
 	}
-	cx, cy := make([]int, N), make([]int, N)
+	var x, y, maxx, maxy int
 	T := 0
+	nx, ny := make([]int, W), make([]int, H)
 	for {
-		for i := 0; i < N; i++ {
-			cx[i] = (xs[i] + T*dx[i]) % W
-			cy[i] = (ys[i] + T*dy[i]) % H
+		maxx, maxy = 0, 0
+		for i := range nx {
+			nx[i] = 0
 		}
-		if heuristic(cx, cy) {
+		for i := range ny {
+			ny[i] = 0
+		}
+		for i := 0; i < N; i++ {
+			x = (xs[i] + T*dx[i]) % W
+			y = (ys[i] + T*dy[i]) % H
+			nx[x]++
+			ny[y]++
+			maxx = max(nx[x], maxx)
+			maxy = max(ny[y], maxy)
+		}
+		if maxx > 20 && maxy > 20 {
 			return T
 		}
 		T++
