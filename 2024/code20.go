@@ -47,7 +47,8 @@ func getUniquePath(grid [][]byte) [][2]int {
 			}
 		}
 	}
-	path := [][2]int{{sr, sc}}
+	path := make([][2]int, 1, len(grid)*len(grid[0]))
+	path[0] = [2]int{sr, sc}
 	for {
 		r, c = path[len(path)-1][0], path[len(path)-1][1]
 		if grid[r][c] == 'E' {
@@ -80,8 +81,27 @@ func abs(x int) int {
 func part12(grid [][]byte, cheatLength int, filter int) int {
 	path := getUniquePath(grid)
 	count := 0
+	blocks := make(map[[2]int][]int)
+	var br, bc int
+	// Group the path elements into squares of side cheatLength
+	for i, pos := range path {
+		br, bc = pos[0]/cheatLength, pos[1]/cheatLength
+		blocks[[2]int{br, bc}] = append(blocks[[2]int{br, bc}], i)
+	}
+	segments := make([]int, 0, len(path))
 	for i := range path {
-		for j := i + filter; j < len(path); j++ {
+		br, bc = path[i][0]/cheatLength, path[i][1]/cheatLength
+		segments = segments[:0]
+		segments = append(segments, blocks[[2]int{br, bc}]...)
+		segments = append(segments, blocks[[2]int{br - 1, bc}]...)
+		segments = append(segments, blocks[[2]int{br + 1, bc}]...)
+		segments = append(segments, blocks[[2]int{br, bc - 1}]...)
+		segments = append(segments, blocks[[2]int{br - 1, bc - 1}]...)
+		segments = append(segments, blocks[[2]int{br + 1, bc - 1}]...)
+		segments = append(segments, blocks[[2]int{br, bc + 1}]...)
+		segments = append(segments, blocks[[2]int{br - 1, bc + 1}]...)
+		segments = append(segments, blocks[[2]int{br + 1, bc + 1}]...)
+		for _, j := range segments {
 			d := abs(path[i][0]-path[j][0]) + abs(path[i][1]-path[j][1])
 			if d > cheatLength {
 				continue
