@@ -121,22 +121,6 @@ func getValue(C Circuit, name byte) int {
 	return n
 }
 
-func cleanCircuit(C Circuit) {
-	for g, _ := range C.gates {
-		delete(C.values, g)
-	}
-}
-
-func setValue(C Circuit, name byte, v int) {
-	// get output
-	for g, _ := range C.values {
-		if g[0] == name {
-			idx, _ := strconv.Atoi(g[1:3])
-			C.values[g] = (v & (1 << idx)) != 0
-		}
-	}
-}
-
 func recEval(C Circuit, g string) bool {
 	if v, ok := C.values[g]; ok {
 		return v
@@ -156,72 +140,80 @@ func recEval(C Circuit, g string) bool {
 }
 
 func part1(C Circuit) int {
-	cleanCircuit(C)
 	for g, _ := range C.gates {
 		recEval(C, g)
 	}
-	return getValue(C, 'z')
-}
-
-func eval(C Circuit, x, y int) int {
-	// evaluate
-	setValue(C, 'x', x)
-	setValue(C, 'y', y)
-	cleanCircuit(C)
-	for g, _ := range C.gates {
-		recEval(C, g)
-	}
-	return getValue(C, 'z')
-}
-
-func HW(x int) int {
-	w := 0
-	for i := 1; i < x; i <<= 1 {
-		if (i & x) != 0 {
-			w++
+	// get output
+	n := 0
+	for g, b := range C.values {
+		if g[0] == 'z' && b {
+			idx, _ := strconv.Atoi(g[1:3])
+			n += 1 << idx
 		}
 	}
-	return w
+	return n
 }
 
-func swap(C Circuit, g1, g2 string) {
-
+func xorand(C Circuit, gates []string) (string, string) {
+	op0 := C.gates[gates[0]][1]
+	op1 := C.gates[gates[1]][1]
+	if op0 == "XOR" && op1 == "AND" {
+		return gates[0], gates[1]
+	} else if op1 == "XOR" && op0 == "AND" {
+		return gates[1], gates[0]
+	} else {
+		log.Fatal("xor and not in the right place")
+	}
+	return "", ""
 }
 
 func part2(C Circuit) string {
-	// Solution here is hard coded because it was the result of
-	// investigation and experimentation
-	swaplist := []string{"rts", "z07", "jpj", "z12", "kgj", "z26", "vvw", "chv"}
-	for s := 0; s < len(swaplist); s += 2 {
-		g1 := swaplist[s]
-		g2 := swaplist[s+1]
-		C.gates[g1], C.gates[g2] = C.gates[g2], C.gates[g1]
+	// cache successors of a gate
+	swapped := make([]string, 0)
+	succ := make(map[string][]string)
+	for g, desc := range C.gates {
+		succ[desc[0]] = append(succ[desc[0]], g)
+		succ[desc[2]] = append(succ[desc[2]], g)
 	}
-	// n := 0
-	// for g, _ := range C.values {
-	// 	if g[0] == 'x' {
-	// 		n += 1
-	// 	}
-	// }
-	// for i := 2; i < n-1; i++ {
-	// 	for x := 0; x < 4; x++ {
-	// 		for y := 0; y < 4; y++ {
-	// 			vx, vy := x<<i, y<<i
-	// 			if eval(C, vx, vy) != (vx + vy) {
-	// 				fmt.Printf("Error %012X %012X diff: %012X\n", vx, vy, eval(C, vx, vy)^(vx+vy))
-	// 				fmt.Printf("  -expected: %012X\n", vx+vy)
-	// 				fmt.Printf("  -instead : %012X\n", eval(C, vx, vy))
-	// 				return ""
-	// 			}
-	// 		}
-	// 	}
-	// }
-	slices.Sort(swaplist)
-	return strings.Join(swaplist, ",")
+	// count the number of inputs (i.e. size of the adder)
+	n := 0
+	for g, _ := range C.values {
+		if g[0] == 'x' {
+			n += 1
+		}
+	}
+	// first carry
+	_, carry := xorand(C, succ["x00"])
+	for i := 1; i < n; i++ {
+		xin := fmt.Sprintf("x%02d", i)
+		zout := fmt.Sprintf("z%02d", i)
+		xor1, and1 := xorand(C, succ[xin]) // The XOR and AND from input bits
+		if len(succ[xor1]) == 1 && len(succ[and1]) == 2 {
+			swapped = append(swapped, xor1)
+			swapped = append(swapped, and1)
+			carry = succ[xor1][0]
+			continue
+		}
+		xor2, _ := xorand(C, succ[carry])
+		if xor2 != zout {
+			swapped = append(swapped, zout)
+			swapped = append(swapped, xor2)
+			if C.gates[zout][1] == "OR" {
+				carry = xor2
+			} else if zout == and1 {
+				carry = succ[xor2][0]
+			} else {
+				carry = succ[and1][0]
+			}
+			continue
+		}
+		carry = succ[and1][0]
+	}
+	slices.Sort(swapped)
+	return strings.Join(swapped, ",")
 }
 
 func printDotFile(C Circuit) {
-	cleanCircuit(C)
 	var inbits, outbits int
 	for g, _ := range C.gates {
 		if g[0] == 'z' {
