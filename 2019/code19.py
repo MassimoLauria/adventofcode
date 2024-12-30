@@ -46,20 +46,19 @@ def beamcover(code,x, ylb):
     return alpha,beta
 
 def part2():
-    """solve part 1"""
+    """solve part 2"""
     with open("input19.txt") as f:
         code = f.read()
     N=100
     alpha,beta = beamcover(code, N, 0)
-    x = (N*100 + beta * 100) // (beta-alpha)
+    x = (N*100 + beta * 100) // (beta-alpha) - 99  # first guess for the solution
     while True:
-        blow,bhigh = beamcover(code, x-99, alpha*(x-99)//N )
-        alow,_ = beamcover(code, x, blow)
+        blow,bhigh = beamcover(code, x, alpha*x//N )
+        alow,_ = beamcover(code, x+99, blow)
         if bhigh-alow == 100:
-
             break
         x+=1
-    print(f"Part2: {(x-99)*10000 + alow}")
+    print(f"Part2: {x*10000 + alow}")
 
 
 
