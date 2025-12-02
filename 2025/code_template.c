@@ -8,15 +8,33 @@
 
 char example[]="shndj4hkjhejkededs\nsdkjkas0";
 
+ssize_t Len(void * mem) {
+    return  *((ssize_t*)mem-1);
+}
+
+int mod(int x,int d){
+    return (d + (x % d)) % d;
+}
+
+void* AllocLen(ssize_t n, ssize_t objsize) {
+    if (n==0 || objsize==0) {
+        perror("AllocLen does not accept zero sized data");
+        exit(EXIT_FAILURE);
+    }
+    void *mem = malloc(sizeof(n)+objsize*n);
+    if (mem==NULL) {
+        perror("AllocLen failed");
+        exit(EXIT_FAILURE);
+    }
+    return mem;
+}
+
 struct data {
     int len;
     int cap;
     int *data;
 };
 
-int mod(int x,int d){
-    return (d + (x % d)) % d;
-}
 
 struct data parse_text(ssize_t textlen, char *p) {
 
@@ -33,28 +51,24 @@ struct data parse_text(ssize_t textlen, char *p) {
    |IIIIIIII|BBBBBBBBBBBB....|
 
 */
-void *load_file(char *filename) {
-    ssize_t size;
+char* load_file(char *filename) {
     struct stat st;
     if (stat(filename,&st)==-1) {
         perror(filename);
         exit(EXIT_FAILURE);
     }
-    size=st.st_size;
-    void *mem=malloc(sizeof(size)+size*sizeof(char));
-    int  *p=mem;
-    *p = size;
-    char *text=mem+sizeof(size);
+    ssize_t n=st.st_size;
+    char *buffer = AllocLen(n, sizeof(char));
     FILE *f = fopen(filename,"r");
     if (f==NULL) {
         perror(filename);
         exit(EXIT_FAILURE);
     }
-    if (fread(text,1,size,f)!=size) {
+    if (fread(buffer,1,n,f)!=n) {
         perror("Non ha letto tutti i bytes");
         exit(EXIT_FAILURE);
     }
-    return mem;
+    return buffer;
 }
 
 
@@ -69,7 +83,12 @@ int part2(struct data input) {
 int main() {
     clock_t start,end;
     int res;
-    void *mem;
+    char *buffer;
+
+    start=clock();
+	buffer = load_file("input01.txt");
+	end = clock();
+    printf("Loading data                                  - %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
 	res = part1(parse_text(sizeof(example),example));
@@ -77,8 +96,7 @@ int main() {
     printf("Part1 - example   : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
-    mem=load_file("input01.txt");
-    res = part1(parse_text(*(int*)mem, mem +sizeof(ssize_t) ));
+    res = part1(parse_text(Len(buffer), buffer ));
 	end = clock();
     printf("Part1 - challenge : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
@@ -88,8 +106,7 @@ int main() {
     printf("Part2 - example   : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
-    mem=load_file("input01.txt");
-    res = part1(parse_text(*(int*)mem, mem +sizeof(ssize_t) ));
+    res = part2(parse_text(Len(buffer), buffer ));
 	end = clock();
     printf("Part2 - challenge : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
