@@ -1,4 +1,4 @@
-// Advent of Code 2025 day XX
+// Advent of Code 2025 day 02
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -42,8 +42,9 @@ void* AllocLen(ssize_t n, ssize_t objsize) {
 
 int parse_text(ssize_t textlen, char *p) {
     char *textend=p+textlen;
-    char *bots,*tops,*bote,*tope;
+    char *bots,*tops;
     int idx=0;
+    int digits;
     int64_t bot,top;
     while(p<textend) {
         // find delimiters of number pairs
@@ -51,21 +52,21 @@ int parse_text(ssize_t textlen, char *p) {
         if (p>=textend) break;
         bots=p;
         while( *p >= '0' && *p <= '9') p++;
-        bote=p;
-        bot=getNum(bots,bote);
+        bot=getNum(bots,p);
+        digits=p-bots;
         p++;
         tops=p;
         while( *p >= '0' && *p <= '9') p++;
-        tope=p++;
-        top=getNum(tops,tope);
+        top=getNum(tops,p);
         Ranges[idx++]=bot;
-        if ((bote-bots) < (tope-tops)) {
-            Ranges[idx++]=POW[bote-bots]-1;
-            Ranges[idx++]=bote-bots;
-            Ranges[idx++]=POW[bote-bots];
+        if (digits < (p-tops)) {
+            Ranges[idx++]=POW[digits]-1;
+            Ranges[idx++]=digits;
+            Ranges[idx++]=POW[digits];
         }
         Ranges[idx++]=top;
-        Ranges[idx++]=tope-tops;
+        Ranges[idx++]=p-tops;
+        p++;
     }
     return idx;
 }
