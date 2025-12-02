@@ -1,4 +1,10 @@
 // Advent of Code 2025 day 02
+/*
+Part1 - example   : 1227775554                - 0.000002
+Part1 - challenge : 30599400849               - 0.000006
+Part2 - example   : 4174379265                - 0.000005
+Part2 - challenge : 46270373595               - 0.000013
+*/
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -61,14 +67,19 @@ int parse_text(ssize_t textlen, char *p) {
         Ranges[idx++]=bot;
         if (digits < (p-tops)) {
             Ranges[idx++]=POW[digits]-1;
-            Ranges[idx++]=digits;
             Ranges[idx++]=POW[digits];
         }
         Ranges[idx++]=top;
-        Ranges[idx++]=p-tops;
         p++;
     }
     return idx;
+}
+
+int digitsOf(int64_t n) {
+    if (n<1) return 0;
+    int d=1;
+    while(n>=POW[d]) d++;
+    return d;
 }
 
 int64_t repeating(int64_t a, int64_t b,int patternlen,int totallen) {
@@ -98,10 +109,10 @@ int64_t part1(ssize_t textlen, char *text) {
     int N = parse_text(textlen,text);
     int64_t bot,top,digits,sum=0;
 
-    for(int i=0;i<N;i+=3) {
+    for(int i=0;i<N;i+=2) {
         bot = Ranges[i];
         top = Ranges[i+1];
-        digits = Ranges[i+2];
+        digits = digitsOf(bot);
         if (digits % 2 ==1) continue;
         sum += repeating(bot,top, digits/2,digits);
     }
@@ -112,30 +123,31 @@ int64_t part2(ssize_t textlen, char *text) {
     int N = parse_text(textlen,text);
     int64_t sum=0;
     int64_t tmp=0;
-
-    int64_t counter[15];  // at most 14 digits
-
-    for(int i=0;i<N;i+=3) {
-        for(int j=0;j<Ranges[i+2];j++) counter[j] = 0;
-        for(int j=1;j<Ranges[i+2];j++) {
-            counter[j] = repeating(Ranges[i],Ranges[i+1],j,Ranges[i+2]);
-        }
+    int64_t bot,top,digits;
+    for(int i=0;i<N;i+=2) {
+        bot = Ranges[i];
+        top = Ranges[i+1];
+        digits = digitsOf(bot);
         tmp=0;
-        switch(Ranges[i+2]) {
+        switch(digits) {
         case 2: case 3: case 5: case 7: case 11:
-            tmp+=counter[1];
+            tmp+=repeating(bot,top,1,digits);
             break;
         case 4: case 8:
-            tmp+=counter[Ranges[i+2]/2];
+            tmp+=repeating(bot,top,digits/2,digits);
             break;
         case 6:
-            tmp+=counter[2]+counter[3]-counter[1];
+            tmp+=repeating(bot,top,2,6);
+            tmp+=repeating(bot,top,3,6);
+            tmp-=repeating(bot,top,1,6);
             break;
         case 9:
-            tmp+=counter[3];
+            tmp+=repeating(bot,top,3,9);
             break;
         case 10:
-            tmp+=counter[5]+counter[2]-counter[1];
+            tmp+=repeating(bot,top,2,10);
+            tmp+=repeating(bot,top,5,10);
+            tmp-=repeating(bot,top,1,10);
             break;
         default:
             tmp=0;
