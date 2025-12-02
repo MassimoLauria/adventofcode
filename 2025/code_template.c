@@ -4,53 +4,93 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 
 char example[]="shndj4hkjhejkededs\nsdkjkas0";
 
-ssize_t Len(void * mem) {
-    return  *((ssize_t*)mem-1);
+struct AllocatedArray {
+    void *end;
+    ssize_t datasize;
+    ssize_t len;
+};
+
+struct AllocatedArray* GetArray(void * array) {
+    return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)));
+}
+
+
+ssize_t Len(void * array) {
+    return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)))->len;
+}
+
+ssize_t Capacity(void * array) {
+    struct AllocatedArray *x = (struct AllocatedArray*)(array - sizeof(struct AllocatedArray));
+    return  (x->end-array)/x->datasize;
+}
+
+void Extend(void *array,ssize_t n) {
+    struct AllocatedArray *x = (struct AllocatedArray*)(array - sizeof(struct AllocatedArray));
+    if (x->end < array+(n+x->len)*x->datasize) {
+        perror("AllocArray: Extension failure. No more capacity");
+        exit(EXIT_FAILURE);
+    }
+    x->len += n;
 }
 
 int mod(int x,int d){
     return (d + (x % d)) % d;
 }
 
-void* AllocLen(ssize_t n, ssize_t objsize) {
-    if (n==0 || objsize==0) {
-        perror("AllocLen does not accept zero sized data");
-        exit(EXIT_FAILURE);
-    }
-    void *mem = malloc(sizeof(n)+objsize*n);
-    if (mem==NULL) {
-        perror("AllocLen failed");
-        exit(EXIT_FAILURE);
-    }
-    return mem;
-}
+/* Allocation of an array with length and capacity
 
-struct data {
-    int len;
-    int cap;
-    int *data;
-};
-
-
-struct data parse_text(ssize_t textlen, char *p) {
-
-    struct data input = { .len=0, .cap=textlen, .data=NULL };
-    return input;
-}
-
-
-/* Gives a memory address containing the byte length of the file as an ssize_t,
-   and all the bytes of the file.
-
-   E.g. a 64bit integer and x bytes
-
-   |IIIIIIII|BBBBBBBBBBBB....|
+   |END-POINT|IIIIIIII|.... data ....|
 
 */
+void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
+    if (len==0 || objsize==0 || len>capacity) {
+        perror("AllocArray: Invalid parameters");
+        exit(EXIT_FAILURE);
+    }
+    void *mem = malloc(sizeof(struct AllocatedArray)+ objsize*capacity);
+    if (mem==NULL) {
+        perror("AllocArray failed");
+        exit(EXIT_FAILURE);
+    }
+    struct AllocatedArray* pack=mem;
+    pack->end=mem + sizeof(struct AllocatedArray)+ objsize*capacity;
+    pack->len=len;
+    pack->datasize=objsize;
+    return mem+sizeof(struct AllocatedArray);
+}
+
+void *parse_text(ssize_t textlen, char *p) {
+
+    int64_t *data=AllocArray(10, 35, sizeof(int64_t));
+    for(int64_t i=0;i<Len(data);i++) {
+        data[i]=i+1;
+    }
+    Extend(data,25);
+    for(int64_t i=10;i<Len(data);i++) {
+        data[i]=2*i;
+    }
+    struct AllocatedArray *a= GetArray(data);
+    void *raw = (void*)a;
+    void *end = a->end;;
+    int i=0;
+    while(raw<end) {
+        if (i%8==0) {
+            printf("\n%p: ",raw);
+        }
+        printf("%02x ",*(unsigned char*)raw);
+        raw++;
+        i++;
+    }
+    printf("\n");
+    return data;
+}
+
+
 char* load_file(char *filename) {
     struct stat st;
     if (stat(filename,&st)==-1) {
@@ -58,7 +98,7 @@ char* load_file(char *filename) {
         exit(EXIT_FAILURE);
     }
     ssize_t n=st.st_size;
-    char *buffer = AllocLen(n, sizeof(char));
+    char *buffer = AllocArray(n, n,sizeof(char));
     FILE *f = fopen(filename,"r");
     if (f==NULL) {
         perror(filename);
@@ -72,11 +112,11 @@ char* load_file(char *filename) {
 }
 
 
-int part1(struct data input) {
+int part1(void *array) {
     return 42;
 }
 
-int part2(struct data input) {
+int part2(void *array) {
     return 42;
 }
 
