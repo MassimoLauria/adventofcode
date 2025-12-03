@@ -90,15 +90,12 @@ int64_t repeating(int64_t a, int64_t b,int patternlen,int totallen) {
     int64_t botHi=a/POW[totallen-patternlen];
     for (int i=0;i< totallen/patternlen;i++) {
         base  = base*POW[patternlen] + botHi;
-    }
-    for (int i=0;i< totallen/patternlen;i++) {
         delta  = delta*POW[patternlen] + 1;
     }
     sum=0;
+    if (base<a) base+= delta;
     while(base<=b) {
-        if (base>=a) {
-            sum+=base;
-        }
+        sum+=base;
         base += delta;
     }
     return sum;
