@@ -90,7 +90,7 @@ char* load_file(char *filename) {
 }
 
 
-int part1(ssize_t textlen, char *p) {
+int64_t part1(ssize_t textlen, char *p) {
     int64_t best_prefix;
     int64_t best;
     int64_t candidate;
@@ -117,14 +117,30 @@ int part1(ssize_t textlen, char *p) {
     return jolt;
 }
 
-int part2(ssize_t textlen, char *p) {
-    parse_text(textlen,p);
-    return 42;
+int64_t part2(ssize_t textlen, char *p) {
+    int64_t best[13];
+    int64_t candidate;
+    char *textend=p+textlen;
+    int64_t jolt=0;
+    int i=0;
+    while(p<textend && *p!='\0') {
+        for(int i=0;i<=12;i++) best[i]=0;
+        while(*p!='\n') {
+            for(i=12;i>=1;i--) {   // necessary to update in reverse!!!
+                candidate=*p -'0' + 10*best[i-1];
+                if (candidate > best[i]) best[i] = candidate;
+            }
+            p++;
+        }
+        p++;
+        jolt+=best[12];
+    }
+    return jolt;
 }
 
 int main() {
     clock_t start,end;
-    int res;
+    int64_t res;
     char *buffer;
 
     start=clock();
@@ -135,22 +151,22 @@ int main() {
     start=clock();
 	res = part1(sizeof(example),example);
 	end = clock();
-    printf("Part1 - example   : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part1 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
     res = part1(Len(buffer), buffer );
 	end = clock();
-    printf("Part1 - challenge : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part1 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
 	res = part2(sizeof(example),example);
 	end = clock();
-    printf("Part2 - example   : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part2 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
     res = part2(Len(buffer), buffer);
 	end = clock();
-    printf("Part2 - challenge : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     return 0;
 }
