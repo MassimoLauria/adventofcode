@@ -44,7 +44,7 @@ int mod(int x,int d){
 
 /* Allocation of an array with length and capacity
 
-   |END-POINT|IIIIIIII|.... data ....|
+   |END-POINT|DATASIZE|IIIIIIII|.... data ....|
 
 */
 void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
@@ -112,43 +112,43 @@ char* load_file(char *filename) {
 }
 
 
-int part1(void *array) {
+int64_t part1(void *array) {
     return 42;
 }
 
-int part2(void *array) {
+int64_t part2(void *array) {
     return 42;
 }
 
 int main() {
     clock_t start,end;
-    int res;
+    int64_t res;
     char *buffer;
 
     start=clock();
-	buffer = load_file("input01.txt");
+	buffer = load_file("inputXX.txt");
 	end = clock();
     printf("Loading data                                  - %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
 	res = part1(parse_text(sizeof(example),example));
 	end = clock();
-    printf("Part1 - example   : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part1 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
     res = part1(parse_text(Len(buffer), buffer ));
 	end = clock();
-    printf("Part1 - challenge : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part1 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
 	res = part2(parse_text(sizeof(example),example));
 	end = clock();
-    printf("Part2 - example   : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part2 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
     res = part2(parse_text(Len(buffer), buffer ));
 	end = clock();
-    printf("Part2 - challenge : %-25d - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     return 0;
 }
