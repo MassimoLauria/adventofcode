@@ -6,8 +6,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <assert.h>
 
-char example[]="shndj4hkjhejkededs\nsdkjkas0";
+char example[]="..@@.@@@@.\n@@@.@.@.@@\n@@@@@.@.@@\n@.@@@@..@.\n@@.@@@@.@@\n.@@@@@@@.@\n.@.@.@.@@@\n@.@@@.@@@@\n.@@@@@@@@.\n@.@.@@@.@.\n";
 
 struct AllocatedArray {
     void *end;
@@ -64,32 +65,6 @@ void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
     return mem+sizeof(struct AllocatedArray);
 }
 
-void *parse_text(ssize_t textlen, char *p) {
-
-    int64_t *data=AllocArray(10, 35, sizeof(int64_t));
-    for(int64_t i=0;i<Len(data);i++) {
-        data[i]=i+1;
-    }
-    Extend(data,25);
-    for(int64_t i=10;i<Len(data);i++) {
-        data[i]=2*i;
-    }
-    struct AllocatedArray *a= GetArray(data);
-    void *raw = (void*)a;
-    void *end = a->end;;
-    int i=0;
-    while(raw<end) {
-        if (i%8==0) {
-            printf("\n%p: ",raw);
-        }
-        printf("%02x ",*(unsigned char*)raw);
-        raw++;
-        i++;
-    }
-    printf("\n");
-    return data;
-}
-
 
 char* load_file(char *filename) {
     struct stat st;
@@ -111,15 +86,72 @@ char* load_file(char *filename) {
     return buffer;
 }
 
+int D8[][2] = { {-1,-1},{-1, 0},{-1,+1},
+                { 0,-1},        { 0,+1},
+                {+1,-1},{+1, 0},{+1,+1}};
 
+
+int mark(char *text, int N) {
+    char x,y;
+    int i,r,c,dr,dc,count=0;
+    int neigs;
+    for(r=0;r<N;r++) {
+        for(c=0;c<N;c++) {
+            x = text[r*N+r+c];
+            neigs=0;
+            if (x=='.') continue;
+            for(i=0;i<8;i++) {
+                dr=r+D8[i][0];
+                dc=c+D8[i][1];
+                if ( dr<0 || dr>=N ) continue;
+                if ( dc<0 || dc>=N ) continue;
+                y = text[dr*N+dr+dc];
+                if (y!='.') neigs++;
+            }
+            if (neigs<4) {
+                count++;
+                text[r*N+r+c]='x';
+            }
+        }
+    }
+    return count;
+}
+
+void removepaper(char *text, int N) {
+    char x;
+    int r,c;
+    for(r=0;r<N;r++) {
+        for(c=0;c<N;c++) {
+            x = text[r*N+r+c];
+            if (x!='x') continue;
+            text[r*N+r+c] ='.';
+        }
+    }
+}
+
+
+/* Matrix is square */
 int64_t part1(ssize_t textlen, char *text) {
-    parse_text(textlen,text);
-    return 42;
+    int N=0;
+    char *p=text;
+    while(*(p++)!='\n') N++;
+    assert(N == textlen/(N+1));
+    return mark(text,N);
 }
 
 int64_t part2(ssize_t textlen, char *text) {
-    parse_text(textlen,text);
-    return 42;
+    int N=0;
+    char *p=text;
+    int r;
+    while(*(p++)!='\n') N++;
+    assert(N == textlen/(N+1));
+    int count=0;
+    do {
+        r =  mark(text,N);
+        removepaper(text, N);
+        count += r;
+    } while (r);
+    return count;
 }
 
 int main() {
@@ -128,7 +160,7 @@ int main() {
     char *buffer;
 
     start=clock();
-	buffer = load_file("inputXX.txt");
+	buffer = load_file("input04.txt");
 	end = clock();
     printf("Loading data                                  - %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
 
@@ -138,7 +170,7 @@ int main() {
     printf("Part1 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
-    res = part1(Len(buffer), buffer );
+    res = part1(Len(buffer), buffer);
 	end = clock();
     printf("Part1 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
@@ -148,7 +180,7 @@ int main() {
     printf("Part2 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
-    res = part2(Len(buffer), buffer );
+    res = part2(Len(buffer), buffer);
 	end = clock();
     printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
