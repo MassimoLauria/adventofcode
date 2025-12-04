@@ -91,7 +91,45 @@ int D8[][2] = { {-1,-1},{-1, 0},{-1,+1},
                 {+1,-1},{+1, 0},{+1,+1}};
 
 
-int mark(char *text, int N) {
+int64_t mayremoveitem(char *text, int r, int c, int N) {
+    int dr,dc;
+    int64_t count;
+    int neig;
+    char x = text[r*N+r+c];
+    int look[8];
+    if (x=='.') return 0;
+
+    neig = 0;
+    for(int i=0;i<8 && neig<4;i++) {
+        look[i]=0;
+        dr=r+D8[i][0];
+        dc=c+D8[i][1];
+        if ( dr<0 || dr>=N ) continue;
+        if ( dc<0 || dc>=N ) continue;
+        if (text[dr*N+dr+dc] != '.') {
+            neig++;
+            look[i]=1;
+        }
+    }
+
+    if (neig>=4) return 0;
+    text[r*N+r+c] = '.';
+    count=1;
+    for(int i=0;i<8;i++) {
+        if (!look[i]) continue;
+        dr=r+D8[i][0];
+        dc=c+D8[i][1];
+        count += mayremoveitem(text, dr, dc, N);
+    }
+    return count;
+}
+
+/* Matrix is square */
+int64_t part1(ssize_t textlen, char *text) {
+    int N=0;
+    char *p=text;
+    while(*(p++)!='\n') N++;
+    assert(N == textlen/(N+1));
     char x,y;
     int i,r,c,dr,dc,count=0;
     int neigs;
@@ -108,80 +146,9 @@ int mark(char *text, int N) {
                 y = text[dr*N+dr+dc];
                 if (y!='.') neigs++;
             }
-            if (neigs<4) {
-                count++;
-                text[r*N+r+c]='x';
-            }
+            if (neigs<4) count++;
         }
     }
-    return count;
-}
-
-void removepaper(char *text, int N) {
-    char x;
-    int r,c;
-    for(r=0;r<N;r++) {
-        for(c=0;c<N;c++) {
-            x = text[r*N+r+c];
-            if (x!='x') continue;
-            text[r*N+r+c] ='.';
-        }
-    }
-}
-
-int64_t mayremoveitem(char *text, int r, int c, int N) {
-    int dr,dc;
-    int64_t count;
-    int neig;
-    char y;
-    char x = text[r*N+r+c];
-    if (x=='.') return 0;
-
-    neig = 0;
-    for(int i=0;i<8;i++) {
-        dr=r+D8[i][0];
-        dc=c+D8[i][1];
-        if ( dr<0 || dr>=N ) continue;
-        if ( dc<0 || dc>=N ) continue;
-        if (text[dr*N+dr+dc] != '.') neig++;
-    }
-
-    if (neig>=4) return 0;
-    text[r*N+r+c] = '.';
-    count=1;
-    for(int i=0;i<8;i++) {
-        dr=r+D8[i][0];
-        dc=c+D8[i][1];
-        if ( dr<0 || dr>=N ) continue;
-        if ( dc<0 || dc>=N ) continue;
-        y = text[dr*N+dr+dc];
-        if (y=='.') continue;
-        count += mayremoveitem(text, dr, dc, N);
-    }
-    return count;
-}
-
-/* Matrix is square */
-int64_t part1(ssize_t textlen, char *text) {
-    int N=0;
-    char *p=text;
-    while(*(p++)!='\n') N++;
-    assert(N == textlen/(N+1));
-    return mark(text,N);
-}
-
-int64_t part2a(ssize_t textlen, char *text) {
-    int N=0;
-    char *p=text;
-    int r;
-    while(*(p++)!='\n') N++;
-    assert(N == textlen/(N+1));
-    int count=0;
-    do {
-        r =  mark(text,N);
-        removepaper(text, N);
-        count += r;
-    } while (r);
     return count;
 }
 
