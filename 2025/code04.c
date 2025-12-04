@@ -95,31 +95,29 @@ int64_t mayremoveitem(char *text, int r, int c, int N) {
     int dr,dc;
     int64_t count;
     int neig;
+    int delr[3];
+    int delc[3];
     char x = text[r*N+r+c];
-    int look[8];
     if (x=='.') return 0;
 
     neig = 0;
-    for(int i=0;i<8 && neig<4;i++) {
-        look[i]=0;
+    for(int i=0;i<8;i++) {
         dr=r+D8[i][0];
         dc=c+D8[i][1];
         if ( dr<0 || dr>=N ) continue;
         if ( dc<0 || dc>=N ) continue;
         if (text[dr*N+dr+dc] != '.') {
+            if (neig>=3) return 0;
+            delr[neig]=dr;
+            delc[neig]=dc;
             neig++;
-            look[i]=1;
         }
     }
 
-    if (neig>=4) return 0;
-    text[r*N+r+c] = '.';
     count=1;
-    for(int i=0;i<8;i++) {
-        if (!look[i]) continue;
-        dr=r+D8[i][0];
-        dc=c+D8[i][1];
-        count += mayremoveitem(text, dr, dc, N);
+    text[r*N+r+c] = '.';
+    for(int i=0;i<neig;i++) {
+        count += mayremoveitem(text, delr[i], delc[i], N);
     }
     return count;
 }
