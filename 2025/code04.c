@@ -129,6 +129,37 @@ void removepaper(char *text, int N) {
     }
 }
 
+int64_t mayremoveitem(char *text, int r, int c, int N) {
+    int dr,dc;
+    int64_t count;
+    int neig;
+    char y;
+    char x = text[r*N+r+c];
+    if (x=='.') return 0;
+
+    neig = 0;
+    for(int i=0;i<8;i++) {
+        dr=r+D8[i][0];
+        dc=c+D8[i][1];
+        if ( dr<0 || dr>=N ) continue;
+        if ( dc<0 || dc>=N ) continue;
+        if (text[dr*N+dr+dc] != '.') neig++;
+    }
+
+    if (neig>=4) return 0;
+    text[r*N+r+c] = '.';
+    count=1;
+    for(int i=0;i<8;i++) {
+        dr=r+D8[i][0];
+        dc=c+D8[i][1];
+        if ( dr<0 || dr>=N ) continue;
+        if ( dc<0 || dc>=N ) continue;
+        y = text[dr*N+dr+dc];
+        if (y=='.') continue;
+        count += mayremoveitem(text, dr, dc, N);
+    }
+    return count;
+}
 
 /* Matrix is square */
 int64_t part1(ssize_t textlen, char *text) {
@@ -139,7 +170,7 @@ int64_t part1(ssize_t textlen, char *text) {
     return mark(text,N);
 }
 
-int64_t part2(ssize_t textlen, char *text) {
+int64_t part2a(ssize_t textlen, char *text) {
     int N=0;
     char *p=text;
     int r;
@@ -153,6 +184,22 @@ int64_t part2(ssize_t textlen, char *text) {
     } while (r);
     return count;
 }
+
+int64_t part2(ssize_t textlen, char *text) {
+    int N=0;
+    char *p=text;
+    int r,c;
+    int64_t count=0;
+    while(*(p++)!='\n') N++;
+    assert(N == textlen/(N+1));
+    for(r=0;r<N;r++) {
+        for(c=0;c<N;c++) {
+            count += mayremoveitem(text,r,c,N);
+        }
+    }
+    return count;
+}
+
 
 int main() {
     clock_t start,end;
