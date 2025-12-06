@@ -10,7 +10,7 @@
 char example[]="shndj4hkjhejkededs\nsdkjkas0";
 
 struct AllocatedArray {
-    void *end;
+    ssize_t cap;
     ssize_t datasize;
     ssize_t len;
 };
@@ -25,17 +25,16 @@ ssize_t Len(void * array) {
 }
 
 ssize_t Capacity(void * array) {
-    struct AllocatedArray *x = (struct AllocatedArray*)(array - sizeof(struct AllocatedArray));
-    return  (x->end-array)/x->datasize;
+    return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)))->cap;
 }
 
-void Extend(void *array,ssize_t n) {
+void Resize(void *array,ssize_t n) {
     struct AllocatedArray *x = (struct AllocatedArray*)(array - sizeof(struct AllocatedArray));
-    if (x->end < array+(n+x->len)*x->datasize) {
-        perror("AllocArray: Extension failure. No more capacity");
+    if (n<1 || n > x->cap) {
+        perror("AllocArray: Extension failure. Not enough capacity or new size < 1");
         exit(EXIT_FAILURE);
     }
-    x->len += n;
+    x->len = n;
 }
 
 int mod(int x,int d){
@@ -44,7 +43,7 @@ int mod(int x,int d){
 
 /* Allocation of an array with length and capacity
 
-   |END-POINT|DATASIZE|IIIIIIII|.... data ....|
+   |CAPACITY|DATASIZE|_LENGTH_|.... data ....|
 
 */
 void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
@@ -58,11 +57,12 @@ void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
         exit(EXIT_FAILURE);
     }
     struct AllocatedArray* pack=mem;
-    pack->end=mem + sizeof(struct AllocatedArray)+ objsize*capacity;
+    pack->cap=capacity;
     pack->len=len;
     pack->datasize=objsize;
     return mem+sizeof(struct AllocatedArray);
 }
+
 
 void *parse_text(ssize_t textlen, char *p) {
 
@@ -70,13 +70,13 @@ void *parse_text(ssize_t textlen, char *p) {
     for(int64_t i=0;i<Len(data);i++) {
         data[i]=i+1;
     }
-    Extend(data,25);
+    Resize(data,35);
     for(int64_t i=10;i<Len(data);i++) {
         data[i]=2*i;
     }
     struct AllocatedArray *a= GetArray(data);
     void *raw = (void*)a;
-    void *end = a->end;;
+    void *end = a+Capacity(data)*sizeof(int64_t);
     int i=0;
     while(raw<end) {
         if (i%8==0) {
