@@ -131,27 +131,28 @@ char* load_file(char *filename) {
 
 
 int64_t part1(ssize_t textlen, char *text) {
-    int i,j,height,width=0;
+    int i,j,height,width;
     char *p;
+    // size of the grid
+    width=0;
     while(text[width]!='\n') width++;
     height= textlen/(width+1);
-    int *statei = (int*)malloc(width*sizeof(int));
-    int *stateo = (int*)malloc(width*sizeof(int));
-    int *tmp=NULL;
-    memset(statei, 0, width*sizeof(int));
-    memset(stateo, 0, width*sizeof(int));
+    int64_t *statei = (int64_t*)malloc(width*sizeof(int64_t));
+    int64_t *stateo = (int64_t*)malloc(width*sizeof(int64_t));
+    int64_t *tmp=NULL;
+    memset(statei, 0, width*sizeof(int64_t));
     statei[width/2]=1;
     p = text+2*width+2;
     int splits=0;
     for(i=2;i<height;i+=2) {
-        memset(stateo, 0, width*sizeof(int));
+        memset(stateo, 0, width*sizeof(int64_t));
         for(j=0;j<width;j++) {
             if (statei[j]==0) continue;
             if (p[j]=='^') {
                 splits++;
-                stateo[j-1]+=statei[j];
+                stateo[j-1]=1;
                 stateo[j]=0;
-                stateo[j+1]+=statei[j];
+                stateo[j+1]=1;
             } else {
                 stateo[j]=statei[j];
             }
@@ -165,7 +166,43 @@ int64_t part1(ssize_t textlen, char *text) {
 }
 
 int64_t part2(ssize_t textlen, char *text) {
-    return 42;
+    int i,j,height,width;
+    char *p;
+
+    // size of the grid
+    width=0;
+    while(text[width]!='\n') width++;
+    height= textlen/(width+1);
+
+
+    int64_t *statei = (int64_t*)malloc(width*sizeof(int64_t));
+    int64_t *stateo = (int64_t*)malloc(width*sizeof(int64_t));
+    int64_t *tmp=NULL;
+    memset(statei, 0, width*sizeof(int64_t));
+    statei[width/2]=1;
+    p = text+2*width+2;
+    for(i=2;i<height;i+=2) {
+        memset(stateo, 0, width*sizeof(int64_t));
+        for(j=0;j<width;j++) {
+            if (statei[j]==0) continue;
+            if (p[j]=='^') {
+                stateo[j-1]+=statei[j];
+                stateo[j]=0;
+                stateo[j+1]+=statei[j];
+            } else {
+                stateo[j]+=statei[j];
+            }
+        }
+        tmp=statei;
+        statei=stateo;
+        stateo=tmp;
+        p +=2*width+2;
+    }
+    int64_t count=0;
+    for(j=0;j<width;j++) {
+        count+=statei[j];
+    }
+    return count;
 }
 
 int main() {
