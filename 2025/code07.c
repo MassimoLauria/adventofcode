@@ -145,17 +145,16 @@ int64_t part1(ssize_t textlen, char *text) {
     p = text+2*width+2;
     int splits=0;
     for(i=2;i<height;i+=2) {
-        memset(stateo, 0, width*sizeof(int64_t));
         for(j=0;j<width;j++) {
             if (statei[j]==0) continue;
             if (p[j]=='^') {
                 splits++;
                 stateo[j-1]=1;
-                stateo[j]=0;
                 stateo[j+1]=1;
             } else {
                 stateo[j]=statei[j];
             }
+            statei[j]=0;
         }
         tmp=statei;
         statei=stateo;
@@ -182,16 +181,15 @@ int64_t part2(ssize_t textlen, char *text) {
     statei[width/2]=1;
     p = text+2*width+2;
     for(i=2;i<height;i+=2) {
-        memset(stateo, 0, width*sizeof(int64_t));
         for(j=0;j<width;j++) {
             if (statei[j]==0) continue;
             if (p[j]=='^') {
                 stateo[j-1]+=statei[j];
-                stateo[j]=0;
                 stateo[j+1]+=statei[j];
             } else {
                 stateo[j]+=statei[j];
             }
+            statei[j]=0;
         }
         tmp=statei;
         statei=stateo;
