@@ -10,9 +10,9 @@
 char example[]="shndj4hkjhejkededs\nsdkjkas0";
 
 struct AllocatedArray {
-    ssize_t cap;
-    ssize_t datasize;
-    ssize_t len;
+    size_t cap;
+    size_t datasize;
+    size_t len;
 };
 
 struct AllocatedArray* GetArray(void * array) {
@@ -20,15 +20,15 @@ struct AllocatedArray* GetArray(void * array) {
 }
 
 
-ssize_t Len(void * array) {
+size_t Len(void * array) {
     return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)))->len;
 }
 
-ssize_t Capacity(void * array) {
+size_t Capacity(void * array) {
     return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)))->cap;
 }
 
-void Resize(void *array,ssize_t n) {
+void Resize(void *array,size_t n) {
     struct AllocatedArray *x = (struct AllocatedArray*)(array - sizeof(struct AllocatedArray));
     if (n<1 || n > x->cap) {
         perror("AllocArray: Extension failure. Not enough capacity or new size < 1");
@@ -46,7 +46,7 @@ int mod(int x,int d){
    |CAPACITY|DATASIZE|_LENGTH_|.... data ....|
 
 */
-void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
+void* AllocArray(size_t  len, size_t capacity, size_t objsize) {
     if (len==0 || objsize==0 || len>capacity) {
         perror("AllocArray: Invalid parameters");
         exit(EXIT_FAILURE);
@@ -64,19 +64,19 @@ void* AllocArray(ssize_t  len, ssize_t capacity, ssize_t objsize) {
 }
 
 
-void *parse_text(ssize_t textlen, char *p) {
+void *parse_text(size_t textlen, char *p) {
 
-    int64_t *data=AllocArray(10, 35, sizeof(int64_t));
-    for(int64_t i=0;i<Len(data);i++) {
-        data[i]=i+1;
+    int64_t *data=AllocArray(4, 10, sizeof(int64_t));
+    for(size_t i=0;i<Len(data);i++) {
+        data[i]=(int64_t)(i+1);
     }
-    Resize(data,35);
-    for(int64_t i=10;i<Len(data);i++) {
-        data[i]=2*i;
+    Resize(data,10);
+    for(size_t i=4;i<Len(data);i++) {
+        data[i]=(int64_t)(2*i);
     }
     struct AllocatedArray *a= GetArray(data);
     void *raw = (void*)a;
-    void *end = a+Capacity(data)*sizeof(int64_t);
+    void *end = raw+sizeof(struct AllocatedArray) + Capacity(data)*sizeof(int64_t);
     int i=0;
     while(raw<end) {
         if (i%8==0) {
@@ -97,7 +97,7 @@ char* load_file(char *filename) {
         perror(filename);
         exit(EXIT_FAILURE);
     }
-    ssize_t n=st.st_size;
+    size_t n=(size_t)st.st_size;
     char *buffer = AllocArray(n, n,sizeof(char));
     FILE *f = fopen(filename,"r");
     if (f==NULL) {
@@ -112,12 +112,12 @@ char* load_file(char *filename) {
 }
 
 
-int64_t part1(ssize_t textlen, char *text) {
+int64_t part1(size_t textlen, char *text) {
     parse_text(textlen,text);
     return 42;
 }
 
-int64_t part2(ssize_t textlen, char *text) {
+int64_t part2(size_t textlen, char *text) {
     parse_text(textlen,text);
     return 42;
 }
@@ -128,7 +128,7 @@ int main() {
     char *buffer;
 
     start=clock();
-	buffer = load_file("inputXX.txt");
+	buffer = load_file("input02.txt");
 	end = clock();
     printf("Loading data                                  - %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
 
