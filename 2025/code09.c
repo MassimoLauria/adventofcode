@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <assert.h>
 
 char example[]="7,1\n11,1\n11,7\n9,7\n9,5\n2,5\n2,3\n7,3\n";
 
@@ -37,10 +38,6 @@ void Resize(void *array,size_t n) {
     x->len = n;
 }
 
-int mod(int x,int d){
-    return (d + (x % d)) % d;
-}
-
 /* Allocation of an array with length and capacity
 
    |CAPACITY|DATASIZE|_LENGTH_|.... data ....|
@@ -64,29 +61,43 @@ void* AllocArray(size_t  len, size_t capacity, size_t objsize) {
 }
 
 
-void *parse_text(size_t textlen, char *p) {
-
-    int64_t *data=AllocArray(4, 10, sizeof(int64_t));
-    for(size_t i=0;i<Len(data);i++) {
-        data[i]=(int64_t)(i+1);
-    }
-    Resize(data,10);
-    for(size_t i=4;i<Len(data);i++) {
-        data[i]=(int64_t)(2*i);
-    }
-    struct AllocatedArray *a= GetArray(data);
-    void *raw = (void*)a;
-    void *end = raw+sizeof(struct AllocatedArray) + Capacity(data)*sizeof(int64_t);
+void *parse_text(size_t textlen, char *text) {
     int i=0;
-    while(raw<end) {
-        if (i%8==0) {
-            printf("\n%p: ",raw);
-        }
-        printf("%02x ",*(unsigned char*)raw);
-        raw++;
-        i++;
+    size_t N=0;
+    for(i=0;i<textlen;i++) {
+        if (text[i]=='\n') N++;
     }
-    printf("\n");
+    int64_t *data=AllocArray(2*N, 2*N, sizeof(int64_t));
+    size_t idx=0;
+    char *p=text;
+    while(idx<2*N) {
+        data[idx]=0;
+        while('0'<=*p && *p <='9') {
+            data[idx] = 10*data[idx]+(*p - '0');
+            p++;
+        }
+        idx++;
+        p++;
+    }
+    // check list properties
+    assert(N%2==0);
+    int64_t *a,*b;
+    if (data[0]==data[2]) {
+        assert(data[2*N-4]==data[2*N-2]);
+        assert(data[1]==data[2*N-1]);
+        a=data; b=data+3;
+    } else {
+        a=data+2; b=data+1;
+        assert(data[2*N-3]==data[2*N-1]);
+        assert(data[0]==data[2*N-2]);
+    }
+    for(i=0;i<N-2;i+=2) {
+        assert(a[2*i]==a[2*i+2]);
+        assert(a[2*i]!=a[2*i+4]);
+        assert(b[2*i]==b[2*i+2]);
+        assert(b[2*i]!=b[2*i+4]);
+    }
+    printf("%lu\n",N);
     return data;
 }
 
@@ -113,8 +124,18 @@ char* load_file(char *filename) {
 
 
 int64_t part1(size_t textlen, char *text) {
-    parse_text(textlen,text);
-    return 42;
+    int64_t *R = parse_text(textlen,text);
+    size_t i,j,N=Len(R)/2;
+    int64_t maxarea=0;
+    int64_t tmparea;
+    for(i=0;i<N-1;i++) {
+        for(j=i+1;j<N;j++) {
+            tmparea = (R[2*i]-R[2*j]+1)*(R[2*i+1]-R[2*j+1]+1);
+            if (tmparea<0) tmparea*=-1;
+            if (tmparea>maxarea) maxarea=tmparea;
+        }
+    }
+    return maxarea;
 }
 
 int64_t part2(size_t textlen, char *text) {
