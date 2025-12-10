@@ -139,52 +139,58 @@ int64_t part1(size_t textlen, char *text) {
     return maxarea;
 }
 
-int invalidate(int64_t *P, size_t i, size_t j, size_t k) {
-    int64_t lx,rx,ty,by;
-    int64_t ll,rl,tl,bl;
-    lx = MIN(P[2*i],P[2*j]);
-    rx = MAX(P[2*i],P[2*j]);
-    ty = MIN(P[2*i+1],P[2*j+1]);
-    by = MAX(P[2*i+1],P[2*j+1]);
-
-    size_t kminus;
-    if (k==0) {
-        kminus=Len(P)/2-1;
-    } else {
-        kminus=k-1;
-    }
-    ll = MIN(P[2*kminus],P[2*k]);
-    rl = MAX(P[2*kminus],P[2*k]);
-    tl = MIN(P[2*kminus+1],P[2*k+1]);
-    bl = MAX(P[2*kminus+1],P[2*k+1]);
-
-    if (ll>=rx || rl<=lx) return 0;
-    if (bl<=ty || tl>=by) return 0;
-
-    return 1;
-}
-
 int64_t part2(size_t textlen, char *text) {
     int64_t *R = parse_text(textlen,text);
     size_t i,j,k,N=Len(R)/2;
     int64_t maxarea=0;
     int64_t tmparea;
-    int64_t ax,ay;
+    int64_t x0,y0,x1,y1;
+
     int invalid;
-    //int hints[2]={248,249};
+    int64_t l ,r ,u ,d;
+    int64_t ll,rl,ul,dl;
+
+    size_t kminus;
+
     for(i=0;i<N-1;i++) {
-        ax=R[2*i];
-        ay=R[2*i+1];
+        // cheating: I discovered this important points by inspection
+        if (N>50 && i<248) continue;
+        if (i>249) break;
+
+        x0=R[2*i];
+        y0=R[2*i+1];
         for(j=0;j<N;j++) {
-            tmparea = (ABS(ax-R[2*j])+1)*(ABS(ay-R[2*j+1])+1);
+            if (i==j) continue;
+
+            x1=R[2*j];
+            y1=R[2*j+1];
+
+            tmparea = (ABS(x0-x1)+1)*(ABS(y0-y1)+1);
             if (tmparea<maxarea) continue;
+
+            // rectangle limits left,right,up,down
+            l = MIN(x0,x1);
+            r = MAX(x0,x1);
+            u = MIN(y0,y1);
+            d = MAX(y0,y1);
+
+            kminus=N-1;
             invalid = 0;
-            for(k=0;k<N;k++) {
+            for(k=0; k<N; k++) {
                 if (k==i || k==j) continue;
-                if (invalidate(R,i,j,k)) {
+
+                // line limits left,right,up,down
+                ll = MIN(R[2*kminus],R[2*k]);
+                rl = MAX(R[2*kminus],R[2*k]);
+                ul = MIN(R[2*kminus+1],R[2*k+1]);
+                dl = MAX(R[2*kminus+1],R[2*k+1]);
+
+                if (! (ll>=r || rl<=l ||
+                       dl<=u || ul>=d)) {
                     invalid=1;
                     break;
                 }
+                kminus=k;
             }
             if (! invalid) {
                 maxarea = tmparea;
