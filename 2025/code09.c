@@ -97,7 +97,6 @@ void *parse_text(size_t textlen, char *text) {
         assert(b[2*i]==b[2*i+2]);
         assert(b[2*i]!=b[2*i+4]);
     }
-    printf("%lu\n",N);
     return data;
 }
 
@@ -122,6 +121,9 @@ char* load_file(char *filename) {
     return buffer;
 }
 
+int64_t ABS(int64_t x) { return x<0?-x:x;  }
+int64_t MIN(int64_t a,int64_t b) { return a<=b?a:b;  }
+int64_t MAX(int64_t a,int64_t b) { return a<b?b:a;   }
 
 int64_t part1(size_t textlen, char *text) {
     int64_t *R = parse_text(textlen,text);
@@ -130,17 +132,66 @@ int64_t part1(size_t textlen, char *text) {
     int64_t tmparea;
     for(i=0;i<N-1;i++) {
         for(j=i+1;j<N;j++) {
-            tmparea = (R[2*i]-R[2*j]+1)*(R[2*i+1]-R[2*j+1]+1);
-            if (tmparea<0) tmparea*=-1;
+            tmparea = (ABS(R[2*i]-R[2*j])+1)*(ABS(R[2*i+1]-R[2*j+1])+1);
             if (tmparea>maxarea) maxarea=tmparea;
         }
     }
     return maxarea;
 }
 
+int invalidate(int64_t *P, size_t i, size_t j, size_t k) {
+    int64_t lx,rx,ty,by;
+    int64_t ll,rl,tl,bl;
+    lx = MIN(P[2*i],P[2*j]);
+    rx = MAX(P[2*i],P[2*j]);
+    ty = MIN(P[2*i+1],P[2*j+1]);
+    by = MAX(P[2*i+1],P[2*j+1]);
+
+    size_t kminus;
+    if (k==0) {
+        kminus=Len(P)/2-1;
+    } else {
+        kminus=k-1;
+    }
+    ll = MIN(P[2*kminus],P[2*k]);
+    rl = MAX(P[2*kminus],P[2*k]);
+    tl = MIN(P[2*kminus+1],P[2*k+1]);
+    bl = MAX(P[2*kminus+1],P[2*k+1]);
+
+    if (ll>=rx || rl<=lx) return 0;
+    if (bl<=ty || tl>=by) return 0;
+
+    return 1;
+}
+
 int64_t part2(size_t textlen, char *text) {
-    parse_text(textlen,text);
-    return 42;
+    int64_t *R = parse_text(textlen,text);
+    size_t i,j,k,N=Len(R)/2;
+    int64_t maxarea=0;
+    int64_t tmparea;
+    int64_t ax,ay;
+    int invalid;
+    //int hints[2]={248,249};
+    for(i=0;i<N-1;i++) {
+        ax=R[2*i];
+        ay=R[2*i+1];
+        for(j=0;j<N;j++) {
+            tmparea = (ABS(ax-R[2*j])+1)*(ABS(ay-R[2*j+1])+1);
+            if (tmparea<maxarea) continue;
+            invalid = 0;
+            for(k=0;k<N;k++) {
+                if (k==i || k==j) continue;
+                if (invalidate(R,i,j,k)) {
+                    invalid=1;
+                    break;
+                }
+            }
+            if (! invalid) {
+                maxarea = tmparea;
+            }
+        }
+    }
+    return maxarea;
 }
 
 int main() {

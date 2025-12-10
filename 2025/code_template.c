@@ -41,6 +41,11 @@ int mod(int x,int d){
     return (d + (x % d)) % d;
 }
 
+int64_t ABS(int64_t x) { return x<0?-x:x;  }
+int64_t MIN(int64_t a,int64_t b) { return a<=b?a:b;  }
+int64_t MAX(int64_t a,int64_t b) { return a<b?b:a;   }
+
+
 /* Allocation of an array with length and capacity
 
    |CAPACITY|DATASIZE|_LENGTH_|.... data ....|
