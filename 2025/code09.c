@@ -153,7 +153,12 @@ int64_t part2(size_t textlen, char *text) {
     size_t kminus;
 
     for(i=0;i<N-1;i++) {
-        // cheating: I discovered this important points by inspection
+
+        // cheating: I discovered these important points by inspection
+        //
+        // for the example there are only few points, and we do not have
+        // special points to start the exploration from. in the challenge,
+        // I know that i can ignore rectangles not touching points 248 or 249.
         if (N>50 && i<248) continue;
         if (i>249) break;
 
