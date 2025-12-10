@@ -74,42 +74,42 @@ void* AllocArray(size_t  len, size_t capacity, size_t objsize) {
 struct system {
     int n;
     int m;
-    int16_t b;
-    int16_t A[13];
+    uint16_t b;
+    uint16_t A[13];
     int joltage[13];
 };
 
-int16_t evaluate(struct *system, int16_t X) {
-    int16_t value=0;
-    int16_t pointer=1;
+uint16_t evaluate(struct system *S, uint16_t X) {
+    unsigned int16_t value=0;
+    unsigned int16_t bit=1;
+    for(i=0;i<S->n;i++) {
+        if ( X & bit ) value ^= S->A[i];
+    }
+    return value;
 }
 
-void *parse_text(size_t textlen, char *p) {
-    size_t i=0;
-    int max_bits_num=0;
-    int max_buttons_num=0;
+char *parse_text(struct system *S, char *p) {
+    S->b = 0;
+    int n,m;
+    unsigned int16_t bit=1;
     int bits=0;
     int buttons=0;
-    while(i<textlen) {
-        switch(p[i]) {
+    while(1) {
+        switch(*p) {
         case '\n':
-            if (buttons > max_buttons_num) max_buttons_num = buttons;
-            if (  bits  > max_bits_num   ) max_bits_num = bits;
-            bits=0;
-            buttons=0;
-            break;
-        case '.':
+            return ++p;
         case '#':
-            bits++;
+            S-> |= bit  ;  // fall through case
+        case '#':
+            bit= bit<<1 ;
+            n++;
             break;
         case '(':
-            buttons++;
+            n++;
             break;
         }
         i++;
     }
-    printf("Max bits: %d, max buttons: %d\n",max_bits_num,max_buttons_num);
-    return p;
 }
 
 
@@ -135,7 +135,12 @@ char* load_file(char *filename) {
 
 
 int64_t part1(size_t textlen, char *text) {
-    parse_text(textlen,text);
+    char *end = *text+textlen;
+    char *p=text;
+    struct system Axb;
+    while (p<end) {
+        p=parse_text(&Axb,p);
+    }
     return 42;
 }
 
