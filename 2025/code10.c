@@ -9,9 +9,9 @@
 #include <assert.h>
 
 char example[]=\
-"[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}\n"
-"[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}\n"
-"[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}\n";
+    "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}\n"
+    "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}\n"
+    "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}\n";
 
 struct AllocatedArray {
     size_t cap;
@@ -86,16 +86,66 @@ struct systemF2 {
     int m;
     uint16_t b;
     uint16_t A[13];
-    int joltage[13];
 };
 
 struct systemZ {
     unsigned n;
     unsigned m;
     unsigned A[10][13];
-    unsigned b[13];
+    unsigned b[10];
+    unsigned value[10];
+    unsigned total;
 };
 
+#define NOSOLUTION 100000
+
+
+unsigned max_value(struct systemZ *S, unsigned j) {
+    unsigned value = 100000;
+    for(unsigned i=0;i<S->n;i++) {
+        assert(S->b[i]>=S->value[i]);
+        if (S->A[i][j]) value = MIN(value,S->b[i] - S->value[i]);
+    }
+    return value;
+}
+
+void add_some(struct systemZ *S, unsigned j, unsigned w) {
+    S->total += w;
+    for(unsigned i=0;i<S->n;i++) {
+        S->value[i] += w*S->A[i][j];
+    }
+}
+
+void sub_some(struct systemZ *S, unsigned j, unsigned w) {
+    S->total -= w;
+    for(unsigned i=0;i<S->n;i++) {
+        assert(S->value[i]>=w*S->A[i][j]);
+        S->value[i] -= w*S->A[i][j];
+    }
+}
+
+void print_systemZ(struct systemZ *S);
+
+unsigned solve(struct systemZ *S, unsigned depth) {
+    unsigned i=0,R;
+    if (depth>=S->m) {
+        for(unsigned i=0;i<S->n;i++) {
+            if (S->b[i]!=S->value[i]) return NOSOLUTION;
+        }
+        return S->total;
+    }
+
+    R = max_value(S,depth);
+    unsigned opt=solve(S,depth+1);
+    unsigned tmp;
+    for(i=1;i<=R;i++) {
+        add_some(S,depth,1);
+        tmp = solve(S,depth+1);
+        if (tmp<opt ) opt=tmp;
+    }
+    sub_some(S,depth,R);
+    return opt;
+}
 
 uint16_t evaluateF2(struct systemF2 *S, uint16_t X) {
     uint16_t value=0;
@@ -139,6 +189,7 @@ char *parse_systemF2(struct systemF2 *S, char *p) {
 char *parse_systemZ(struct systemZ *S, char *p) {
     S->n = 0;
     S->m = 0;
+    S->total=0;
     while(*p!='[') { p++;}
     p++;
     while(*p!=']') { S->n++; p++;}
@@ -157,6 +208,7 @@ char *parse_systemZ(struct systemZ *S, char *p) {
         if (*p>='0' && *p <='9') tmp= 10*tmp+(*p-'0');
         else {
             S->b[idx] = tmp;
+            S->value[idx] = 0;
             tmp=0;
             idx++;
         }
@@ -176,9 +228,8 @@ void print_systemZ(struct systemZ *S) {
             printf("%u",S->A[i][j]);
         }
         if (tmp==1) units++;
-        printf("  =  %u\n",S->b[i]);
+        printf("  =  %u   (%u)\n",S->b[i], S->value[i]);
     }
-    printf("---- it has %u units\n",units);
 }
 
 char* load_file(char *filename) {
@@ -230,11 +281,14 @@ int64_t part1(size_t textlen, char *text) {
 int64_t part2(size_t textlen, char *text) {
     char *p=text;
     struct systemZ Axb;
+    unsigned optimal;
+    unsigned sum=0;
     while (*p=='[') {
         p=parse_systemZ(&Axb,p);
-        print_systemZ(&Axb);
+        optimal=solve(&Axb,0);
+        sum+=optimal;
     }
-    return 42;
+    return sum;
 }
 
 int main() {
@@ -262,10 +316,10 @@ int main() {
 	end = clock();
     printf("Part2 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
-    start=clock();
-    res = part2(Len(buffer), buffer );
-	end = clock();
-    printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
+    /* start=clock();
+     * res = part2(Len(buffer), buffer );
+	 * end = clock();
+     * printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC); */
 
     return 0;
 }
