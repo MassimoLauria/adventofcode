@@ -25,22 +25,11 @@ def solve_system(line):
     pos = [x>=0 for x in X ]
     lines = [ sum(X[j] for j in Ar[i]) == b[i] for i in range(N) ]
 
-    def test_limit(v):
-        Z  = Solver()
-        Z.add(pos+lines)
-        Z.add([sum(X)<=v])
-        return Z.check()==sat
-
-    s = 0
-    e = sum(b)
-    while e-s>1:
-        mid = (s+e)//2
-        if test_limit(mid):
-            e = mid
-        else:
-            s = mid
-    return e
-
+    Z = Optimize()
+    Z.add(pos+lines)
+    h = Z.minimize(sum(x for x in X))
+    assert(Z.check()==sat)
+    return h.value().as_long()
 
 if __name__ == "__main__":
     resE=0
