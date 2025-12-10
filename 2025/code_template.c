@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <assert.h>
 
 char example[]="shndj4hkjhejkededs\nsdkjkas0";
 

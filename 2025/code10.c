@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <assert.h>
 
 char example[]=\
 "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}\n"
@@ -40,6 +41,15 @@ void Resize(void *array,size_t n) {
     x->len = n;
 }
 
+int howmanybits(uint16_t x) {
+    int n=0;
+    while(x) {
+        n += x & 1;
+        x >>=1;
+    }
+    return n;
+}
+
 int mod(int x,int d){
     return (d + (x % d)) % d;
 }
@@ -71,7 +81,7 @@ void* AllocArray(size_t  len, size_t capacity, size_t objsize) {
     return mem+sizeof(struct AllocatedArray);
 }
 
-struct system {
+struct systemF2 {
     int n;
     int m;
     uint16_t b;
@@ -79,39 +89,97 @@ struct system {
     int joltage[13];
 };
 
-uint16_t evaluate(struct system *S, uint16_t X) {
-    unsigned int16_t value=0;
-    unsigned int16_t bit=1;
-    for(i=0;i<S->n;i++) {
+struct systemZ {
+    unsigned n;
+    unsigned m;
+    unsigned A[10][13];
+    unsigned b[13];
+};
+
+
+uint16_t evaluateF2(struct systemF2 *S, uint16_t X) {
+    uint16_t value=0;
+    uint16_t bit=1;
+    for(size_t i=0;i<S->m;i++) {
         if ( X & bit ) value ^= S->A[i];
+        bit <<= 1;
     }
     return value;
 }
 
-char *parse_text(struct system *S, char *p) {
+char *parse_systemF2(struct systemF2 *S, char *p) {
     S->b = 0;
-    int n,m;
-    unsigned int16_t bit=1;
-    int bits=0;
-    int buttons=0;
+    S->n = 0;
+    S->m = 0;
+    uint16_t bit=1;
     while(1) {
         switch(*p) {
         case '\n':
             return ++p;
         case '#':
-            S-> |= bit  ;  // fall through case
-        case '#':
+            S->b |= bit  ;  // fall through case
+        case '.':
             bit= bit<<1 ;
-            n++;
+            S->n++;
             break;
         case '(':
-            n++;
+            p++;
+            S->A[S->m]=0;
+            while(*p!=' ') {
+                S->A[S->m] |= 1 << (*p-'0');
+                p+=2;
+            }
+            S->m++;
             break;
         }
-        i++;
+        p++;
     }
 }
 
+char *parse_systemZ(struct systemZ *S, char *p) {
+    S->n = 0;
+    S->m = 0;
+    while(*p!='[') { p++;}
+    p++;
+    while(*p!=']') { S->n++; p++;}
+    while(*p!='{') {
+        if (*p=='(') {
+            for(unsigned i=0;i<S->n;i++) S->A[i][S->m]=0;
+        }
+        if (*p>='0' && *p <='9') S->A[(*p-'0')][S->m]=1;
+        if (*p==')') S->m++;
+        p++;
+    }
+    p++;
+    unsigned tmp=0;
+    unsigned idx=0;
+    do {
+        if (*p>='0' && *p <='9') tmp= 10*tmp+(*p-'0');
+        else {
+            S->b[idx] = tmp;
+            tmp=0;
+            idx++;
+        }
+        p++;
+    } while (*p!='\n');
+    return ++p;
+}
+
+
+void print_systemZ(struct systemZ *S) {
+    unsigned i,j;
+    unsigned  tmp,units=0;
+    for (i=0;i<S->n;i++) {
+        tmp=0;
+        for (j=0;j<S->m;j++) {
+            tmp+=S->A[i][j];
+            printf("%u",S->A[i][j]);
+        }
+        if (tmp==1) units++;
+        printf("  =  %u\n",S->b[i]);
+    }
+    printf("---- it has %u units\n",units);
+}
 
 char* load_file(char *filename) {
     struct stat st;
@@ -135,17 +203,37 @@ char* load_file(char *filename) {
 
 
 int64_t part1(size_t textlen, char *text) {
-    char *end = *text+textlen;
     char *p=text;
-    struct system Axb;
-    while (p<end) {
-        p=parse_text(&Axb,p);
+    struct systemF2 Axb;
+    int total=0;
+    uint16_t X;
+
+    int howmany[1<<13];
+    for(X=0;X<(1<<13);X++) howmany[X]=howmanybits(X);
+
+    while (*p=='[') {
+        p=parse_systemF2(&Axb,p);
+        uint16_t T=1<<Axb.m;
+        assert(T<=(1<<13));
+        int sol=Axb.m+1;
+        for(X=0;X<T;X++) {
+           if (evaluateF2(&Axb,X)==Axb.b) {
+               if (sol>howmany[X]) sol=howmany[X];
+            }
+        }
+        assert(sol<=Axb.m);
+        total+=sol;
     }
-    return 42;
+    return total;
 }
 
 int64_t part2(size_t textlen, char *text) {
-    parse_text(textlen,text);
+    char *p=text;
+    struct systemZ Axb;
+    while (*p=='[') {
+        p=parse_systemZ(&Axb,p);
+        print_systemZ(&Axb);
+    }
     return 42;
 }
 
