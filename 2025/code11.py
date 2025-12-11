@@ -1,36 +1,4 @@
-
 from collections import defaultdict
-
-def DFS(G,v=None):
-    visit={}
-    time=0;
-    if v is None:
-        explore = G
-    else:
-        explore = [v]
-    for v in explore:
-        if v not in visit:
-            time=DFS_r(G,v,visit,time)
-    return visit
-
-def DFS_r(G,v,visit,time):
-    assert(v not in visit)
-    visit[v] = [time,None]
-    time+=1
-    for nextv in G[v]:
-        if nextv not in visit:
-            time = DFS_r(G,nextv,visit,time)
-        elif visit[nextv][1] is None:
-            raise ValueError("Ciclic!!!",v,visit)
-    visit[v][1] = time
-    return time+1
-
-def toposort(G,base=None):
-    visit = DFS(G,base)
-    R=[(-visit[v][1],v) for v in visit]
-    R.sort()
-    R=[v for (t,v) in R]
-    return R
 
 example="""
 aaa: you hhh
@@ -61,6 +29,29 @@ ggg: out
 hhh: out
 """
 
+
+def DFS(G,v,visit=None,time=0):
+    if visit is None:
+        visit={}
+        time =0
+    assert(v not in visit)
+    visit[v] = [time,None]
+    time+=1
+    for nextv in G[v]:
+        if nextv not in visit:
+            DFS(G,nextv,visit,time)
+            time = visit[nextv][1]+1
+    visit[v][1] = time
+    return visit
+
+def toposort(G,base=None):
+    visit = DFS(G,base)
+    R=[(-visit[v][1],v) for v in visit]
+    R.sort()
+    R=[v for (t,v) in R]
+    return R
+
+
 def parse_graph(text):
     V={}
     for line in text.strip().splitlines():
@@ -81,34 +72,26 @@ def part1(text):
             P[u]+=P[v]
     return P['out']
 
+
+def paths(G,S,points):
+    inds =[S.index(p) for p in points]
+    pathnum=1
+    for i in range(len(inds)-1):
+        st=S[inds[i]]
+        en=S[inds[i+1]]
+        M=defaultdict(int)
+        M[st]=1
+        for i in range(inds[i],inds[i+1]):
+            v = S[i]
+            for u in G[v]:
+                M[u] += M[v]
+        pathnum *= M[en]
+    return pathnum
+
 def part2(text):
     G = parse_graph(text)
     S = toposort(G,'svr')
-    P={
-        ""   : defaultdict(int),
-        "d"  : defaultdict(int),
-        "f"  : defaultdict(int),
-        "df" : defaultdict(int)
-    }
-    P[""]['svr']=1
-    for v in S:
-        for u in G[v]:
-            if u == "dac":
-                P[""][u] = 0
-                P["f"][u] = 0
-                P["d"][u] += P[""][v] + P["d"][v]
-                P["df"][u] += P["f"][v] + P["df"][v]
-            elif u == "fft":
-                P[""][u] = 0
-                P["d"][u] = 0
-                P["f"][u] += P[""][v] + P["f"][v]
-                P["df"][u] += P["d"][v] + P["df"][v]
-            else:
-                P[""][u] += P[""][v]
-                P["d"][u] += P["d"][v]
-                P["f"][u] += P["f"][v]
-                P["df"][u] += P["df"][v]
-    return P["df"]['out']
+    return paths(G,S,['svr','fft','dac','out'])
 
 
 if __name__ == "__main__":
