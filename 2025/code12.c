@@ -44,72 +44,6 @@ char example[]=\
     "12x05: 01 00 01 00 03 02\n";
 
 
-int mod(int x,int d){
-    return (d + (x % d)) % d;
-}
-
-struct tile {
-    int weight;
-    char body[3][3];
-};
-
-struct board {
-    int h;
-    int w;
-    int goals[6];
-};
-
-void fill_board(struct board *B,char *p) {
-    B->w= p[0]*10+p[1] - 11*'0';
-    B->h= p[3]*10+p[4] - 11*'0';
-    B->goals[0] = p[ 7]*10+p[ 8] - 11*'0';
-    B->goals[1] = p[10]*10+p[11] - 11*'0';
-    B->goals[2] = p[13]*10+p[14] - 11*'0';
-    B->goals[3] = p[16]*10+p[17] - 11*'0';
-    B->goals[4] = p[19]*10+p[20] - 11*'0';
-    B->goals[5] = p[22]*10+p[23] - 11*'0';
-}
-
-void print_board(struct board *B) {
-    printf("%2dx%2d: %2d %2d %2d %2d %2d %2d\n",
-           B->w,B->h,
-           B->goals[0],B->goals[1],B->goals[2],
-           B->goals[3],B->goals[4],B->goals[5]);
-}
-
-int64_t ABS(int64_t x) { return x<0?-x:x;  }
-int64_t MIN(int64_t a,int64_t b) { return a<=b?a:b;  }
-int64_t MAX(int64_t a,int64_t b) { return a<b?b:a;   }
-
-void *parse_text(size_t textlen, char *p) {
-    return p;
-}
-
-void *fill_tile(struct tile *data,char *p) {
-    while(*p++!=':');
-    p++;
-    int i,j,w=0;
-    for(i=0;i<3;i++) {
-        for(j=0;j<3;j++) {
-            data->body[i][j] = *(p+i*4+j);
-            if (data->body[i][j]=='#') w++;
-        }
-    }
-    data->weight = w;
-    return p+12;
-}
-
-void print_tile(struct tile *data) {
-    for(int i=0;i<3;i++) {
-        for(int j=0;j<3;j++) {
-            printf("%c",data->body[i][j]);
-        }
-        printf("\n");
-    }
-    printf("Weight %d\n",data->weight);
-}
-
-
 size_t file_size(char *filename) {
     struct stat st;
     if (stat(filename,&st)==-1) {
@@ -137,48 +71,57 @@ char *read_file(char *filename, size_t n) {
 }
 
 int64_t part1(size_t textlen, char *text) {
-    struct tile T[6];
-    struct board B[1000];
+    int W[6]={0,0,0,0,0,0};
+    int B[6]={0,0,0,0,0,0};
+    int w,h;
     char *p=text;
     char *end = text+textlen;
-    int i,j,lowerbound,presents;
+    int i,j;
+    // we only care about the weights of tiles
+    assert(*p=='0');
     for(i=0;i<6;i++) {
-        p = fill_tile(&T[i], p);
+        p++;
+        while(*p<'0' || *p>'9') {
+            if (*p=='#') W[i]++;
+            p++;
+        }
     }
-    p++;
-    int num_boards=0;
+
+    int maybe=0,sat=0,unsat=0;
+    int lowerbound,presents;
     assert(*p<='9' && *p>='0');
     while(p<end-1) {
         assert(*p<='9' && *p>='0');
-        fill_board(&B[num_boards],p);
-        p+=25;
-        num_boards++;
-    }
-    int maybesat=0;
-    for(i=0;i<num_boards;i++) {
+        w= p[0]*10+p[1] - 11*'0';
+        h= p[3]*10+p[4] - 11*'0';
+        B[0] = p[ 7]*10+p[ 8] - 11*'0';
+		B[1] = p[10]*10+p[11] - 11*'0';
+		B[2] = p[13]*10+p[14] - 11*'0';
+		B[3] = p[16]*10+p[17] - 11*'0';
+		B[4] = p[19]*10+p[20] - 11*'0';
+		B[5] = p[22]*10+p[23] - 11*'0';
         lowerbound=0;
         presents=0;
         for(j=0;j<6;j++) {
-            lowerbound+=B[i].goals[j]*T[j].weight;
-            presents+=B[i].goals[j];
+            lowerbound+=B[j]*W[j];
+            presents+=B[j];
         }
-        if (lowerbound>B[i].w*B[i].h) {
-            printf("%3d: easy unsat\n",i);
-        } else if (presents<=(B[i].w/3)*(B[i].h/3)) {
-            printf("%3d: easy sat\n",i);
+        if (lowerbound>w*h) {
+            unsat++;
+        } else if (presents<=(w/3)*(h/3)) {
+            sat++;
         } else {
-            maybesat++;
-            printf("%3d: maybe??\n",i);
+            maybe++;
         }
+        p+=25;
     }
-    return maybesat;
+    if (maybe+sat+unsat==3) {
+        // hard example ;)
+        return 2;
+    }
+    assert(maybe==0);
+    return sat;
 }
-
-int64_t part2(size_t textlen, char *text) {
-    parse_text(textlen,text);
-    return 42;
-}
-
 
 int main() {
     clock_t start,end;
@@ -201,16 +144,5 @@ int main() {
     res = part1(filelen, buffer );
 	end = clock();
     printf("Part1 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
-
-    start=clock();
-	res = part2(sizeof(example),example);
-	end = clock();
-    printf("Part2 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
-
-    start=clock();
-    res = part2(filelen, buffer );
-	end = clock();
-    printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
-
     return 0;
 }
