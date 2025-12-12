@@ -44,8 +44,8 @@ void Resize(void *array,size_t n) {
 int howmanybits(uint16_t x) {
     int n=0;
     while(x) {
-        n += x & 1;
-        x >>=1;
+        n++;
+        x &= x - 1;
     }
     return n;
 }
