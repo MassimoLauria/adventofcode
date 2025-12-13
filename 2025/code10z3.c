@@ -15,34 +15,6 @@ char example[]=\
     "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}\n"
     "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}\n";
 
-struct AllocatedArray {
-    size_t cap;
-    size_t datasize;
-    size_t len;
-};
-
-struct AllocatedArray* GetArray(void * array) {
-    return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)));
-}
-
-
-size_t Len(void * array) {
-    return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)))->len;
-}
-
-size_t Capacity(void * array) {
-    return ((struct AllocatedArray*)(array - sizeof(struct AllocatedArray)))->cap;
-}
-
-void Resize(void *array,size_t n) {
-    struct AllocatedArray *x = (struct AllocatedArray*)(array - sizeof(struct AllocatedArray));
-    if (n<1 || n > x->cap) {
-        perror("AllocArray: Extension failure. Not enough capacity or new size < 1");
-        exit(EXIT_FAILURE);
-    }
-    x->len = n;
-}
-
 int howmanybits(uint16_t x) {
     int n=0;
     while(x) {
@@ -52,36 +24,36 @@ int howmanybits(uint16_t x) {
     return n;
 }
 
-int mod(int x,int d){
-    return (d + (x % d)) % d;
+size_t file_size(char *filename) {
+    struct stat st;
+    if (stat(filename,&st)==-1) {
+        perror(filename);
+        exit(EXIT_FAILURE);
+    }
+    size_t n=(size_t)st.st_size;
+    return n;
 }
+
+char *read_file(char *filename, size_t n) {
+    char *buffer = (char*)malloc(n*sizeof(char));
+    FILE *f = fopen(filename,"r");
+    if (f==NULL) {
+        perror(filename);
+        exit(EXIT_FAILURE);
+    }
+    size_t fs;
+    fs=fread(buffer,1,n,f);
+    if (fs!=n) {
+        fprintf(stderr,"Non ha letto tutti i bytes: ne ha letti %lu invece di %lu\n",fs,n);
+        exit(EXIT_FAILURE);
+    }
+    return buffer;
+}
+
 
 int ABS(int x) { return x<0?-x:x;  }
 int MIN(int a,int b) { return a<=b?a:b;  }
 int MAX(int a,int b) { return a<b?b:a;   }
-
-
-/* Allocation of an array with length and capacity
-
-   |CAPACITY|DATASIZE|_LENGTH_|.... data ....|
-
-*/
-void* AllocArray(size_t  len, size_t capacity, size_t objsize) {
-    if (len==0 || objsize==0 || len>capacity) {
-        perror("AllocArray: Invalid parameters");
-        exit(EXIT_FAILURE);
-    }
-    void *mem = malloc(sizeof(struct AllocatedArray)+ objsize*capacity);
-    if (mem==NULL) {
-        perror("AllocArray failed");
-        exit(EXIT_FAILURE);
-    }
-    struct AllocatedArray* pack=mem;
-    pack->cap=capacity;
-    pack->len=len;
-    pack->datasize=objsize;
-    return mem+sizeof(struct AllocatedArray);
-}
 
 struct systemF2 {
     int n;
@@ -185,25 +157,6 @@ void print_systemZ(struct systemZ *S) {
     }
 }
 
-char* load_file(char *filename) {
-    struct stat st;
-    if (stat(filename,&st)==-1) {
-        perror(filename);
-        exit(EXIT_FAILURE);
-    }
-    size_t n=(size_t)st.st_size;
-    char *buffer = AllocArray(n, n,sizeof(char));
-    FILE *f = fopen(filename,"r");
-    if (f==NULL) {
-        perror(filename);
-        exit(EXIT_FAILURE);
-    }
-    if (fread(buffer,1,n,f)!=n) {
-        perror("Non ha letto tutti i bytes");
-        exit(EXIT_FAILURE);
-    }
-    return buffer;
-}
 
 /**
  * Solves a linear system with 0/1 coefficients, finding non-negative
@@ -344,9 +297,11 @@ int main() {
     clock_t start,end;
     int64_t res;
     char *buffer;
+    size_t filelen;
 
     start=clock();
-	buffer = load_file("input10.txt");
+    filelen  = file_size("input10.txt");
+    buffer   = read_file("input10.txt",filelen);
 	end = clock();
     printf("Loading data                                  - %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
 
@@ -356,7 +311,7 @@ int main() {
     printf("Part1 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
-    res = part1(Len(buffer), buffer );
+    res = part1(filelen, buffer );
 	end = clock();
     printf("Part1 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
@@ -366,7 +321,7 @@ int main() {
     printf("Part2 - example   : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 
     start=clock();
-    res = part2(Len(buffer), buffer );
+    res = part2(filelen, buffer );
 	end = clock();
     printf("Part2 - challenge : %-25ld - %f\n", res, ((double)(end-start))/CLOCKS_PER_SEC);
 

@@ -30,10 +30,10 @@ hhh: out
 """
 
 
-def DFS(G,v,visit=None,time=0):
+def DFS(G,v,visit=None,time=1):
     if visit is None:
         visit={}
-        time =0
+        time =1
     assert(v not in visit)
     visit[v] = [time,None]
     time+=1
@@ -50,7 +50,6 @@ def toposort(G,base=None):
     R.sort()
     R=[v for (t,v) in R]
     return R
-
 
 def parse_graph(text):
     V={}
