@@ -15,15 +15,6 @@ char example[]=\
     "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}\n"
     "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}\n";
 
-int howmanybits(uint16_t x) {
-    int n=0;
-    while(x) {
-        n += x & 1;
-        x >>=1;
-    }
-    return n;
-}
-
 size_t file_size(char *filename) {
     struct stat st;
     if (stat(filename,&st)==-1) {
@@ -253,7 +244,6 @@ int solve_linear_system(struct systemZ *S)
     return total;
 }
 
-
 int64_t part1(size_t textlen, char *text) {
     char *p=text;
     struct systemF2 Axb;
@@ -261,7 +251,10 @@ int64_t part1(size_t textlen, char *text) {
     uint16_t X;
 
     int howmany[1<<13];
-    for(X=0;X<(1<<13);X++) howmany[X]=howmanybits(X);
+    howmany[0]=0;
+    for(X=1;X<(1<<13);X++) {
+        howmany[X]= 1 + howmany[X&(X-1)];
+    }
 
     while (*p=='[') {
         p=parse_systemF2(&Axb,p);
@@ -269,8 +262,9 @@ int64_t part1(size_t textlen, char *text) {
         assert(T<=(1<<13));
         int sol=Axb.m+1;
         for(X=0;X<T;X++) {
-           if (evaluateF2(&Axb,X)==Axb.b) {
-               if (sol>howmany[X]) sol=howmany[X];
+            if (sol<=howmany[X]) continue;
+            if (evaluateF2(&Axb,X)==Axb.b) {
+                sol=howmany[X];
             }
         }
         assert(sol<=Axb.m);
