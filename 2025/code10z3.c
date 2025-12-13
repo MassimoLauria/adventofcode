@@ -69,16 +69,6 @@ int solve(struct systemZ *S) {
     return 0;
 }
 
-uint16_t evaluateF2(struct systemF2 *S, uint16_t X) {
-    uint16_t value=0;
-    uint16_t bit=1;
-    for(size_t i=0;i<S->m;i++) {
-        if ( X & bit ) value ^= S->A[i];
-        bit <<= 1;
-    }
-    return value;
-}
-
 char *parse_systemF2(struct systemF2 *S, char *p) {
     S->b = 0;
     S->n = 0;
@@ -250,23 +240,43 @@ int64_t part1(size_t textlen, char *text) {
     int total=0;
     uint16_t X;
 
+    /* A gray code enumeration like this
+
+       0000 0001 0011 0010 0110 0111 0101 0100 1100 1101 ....
+
+       - The first 2^b items enumerate the first 2^b integers, hence I can use
+       just a prefix of this enumeration for input with fewer than
+       13 variables.
+
+       - I actually just need to keep track of (a) bit flipped w.r.t.
+         the previous string, and (b) how many bit the string has set to 1.
+
+     */
+    int flips[1<<13];
     int howmany[1<<13];
-    howmany[0]=0;
-    for(X=1;X<(1<<13);X++) {
-        howmany[X]= 1 + howmany[X&(X-1)];
+    flips[0]=0; howmany[0]=0;
+    int size=1;
+    for(int b=0;b<13;b++) {
+        for(int i=0;i<size;i++) {
+            flips [i+size]=flips[size-i];
+            howmany[i+size]=howmany[size-i-1]+1;
+        }
+        flips[size]=b;
+        size <<=1;
     }
+
 
     while (*p=='[') {
         p=parse_systemF2(&Axb,p);
         uint16_t T=1<<Axb.m;
         assert(T<=(1<<13));
         int sol=Axb.m+1;
-        for(X=0;X<T;X++) {
-            if (sol<=howmany[X]) continue;
-            if (evaluateF2(&Axb,X)==Axb.b) {
-                sol=howmany[X];
-            }
-        }
+        uint16_t value=0;
+        for(X=1;X<T;X++) {
+            //if (sol<=howmany[X]) continue;
+            value ^= Axb.A[flips[X]];
+            if (value==Axb.b && sol>howmany[X]) sol=howmany[X];
+       }
         assert(sol<=Axb.m);
         total+=sol;
     }
